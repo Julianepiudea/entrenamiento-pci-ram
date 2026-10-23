@@ -1,0 +1,1161 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Entrenamiento PCI-RAM OPS</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: ficha de sala de aislamiento — barra de pestañas fija, columna de lectura ~70ch, tarjetas solo para preguntas y casos */
+:root{
+  --bg:#f3f6f6; --surface:#ffffff; --ink:#132a2e; --muted:#566b6f; --line:#d5dfe0;
+  --accent:#0e6e72; --accent-soft:#dcefef; --warn:#b5650c; --warn-soft:#fbeedd;
+  --ok:#24804a; --ok-soft:#e1f3e7; --bad:#b3322b; --bad-soft:#fae4e2;
+  --f-display:"Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1719; --surface:#142225; --ink:#e3eeee; --muted:#93a9ac; --line:#26393c;
+  --accent:#5cc4c4; --accent-soft:#173739; --warn:#f0a95a; --warn-soft:#3a2a17;
+  --ok:#6cd391; --ok-soft:#163323; --bad:#f08a82; --bad-soft:#3b1d1b; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1719; --surface:#142225; --ink:#e3eeee; --muted:#93a9ac; --line:#26393c;
+  --accent:#5cc4c4; --accent-soft:#173739; --warn:#f0a95a; --warn-soft:#3a2a17;
+  --ok:#6cd391; --ok-soft:#163323; --bad:#f08a82; --bad-soft:#3b1d1b; color-scheme:dark}
+
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--f-body)}
+.wrap{max-width:860px;margin:0 auto;padding-left:max(16px, env(safe-area-inset-left,0px));padding-right:max(16px, env(safe-area-inset-right,0px));padding-block:0 64px}
+header.top{padding-block:28px 12px}
+.eyebrow{font:500 12px/1 var(--f-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+h1{font:700 clamp(28px,5vw,40px)/1.1 var(--f-display);margin:.35em 0 .3em;text-wrap:balance}
+h2{font:700 24px/1.2 var(--f-display);margin:1.6em 0 .5em;text-wrap:balance}
+h3{font:600 17px/1.3 var(--f-body);margin:1.4em 0 .4em}
+p,li{max-width:70ch}
+.lede{color:var(--muted);margin:0}
+a{color:var(--accent)}
+nav.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);display:flex;gap:4px;overflow-x:auto;padding-block:8px}
+nav.tabs button{font:500 14px var(--f-body);color:var(--muted);background:none;border:0;padding:8px 12px;border-radius:6px;cursor:pointer;white-space:nowrap}
+nav.tabs button[aria-selected="true"]{color:var(--ink);background:var(--accent-soft)}
+button:focus-visible,input:focus-visible,select:focus-visible,summary:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tag{display:inline-block;font:500 11px/1.6 var(--f-mono);letter-spacing:.04em;padding:0 7px;border-radius:4px;background:var(--accent-soft);color:var(--accent)}
+.en{font:400 12px var(--f-mono);color:var(--muted)}
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tbl{overflow-x:auto;margin:.6em 0 1em}
+th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--f-mono);text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+td.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+.note{border-left:3px solid var(--warn);background:var(--warn-soft);padding:10px 14px;border-radius:0 6px 6px 0;margin:1em 0}
+.note b{color:var(--warn)}
+details{border-bottom:1px solid var(--line);padding-block:6px}
+details>summary{cursor:pointer;font:600 16px var(--f-body);padding-block:6px;list-style:none;display:flex;justify-content:space-between;gap:12px}
+details>summary::after{content:"+";font-family:var(--f-mono);color:var(--accent)}
+details[open]>summary::after{content:"–"}
+details>summary::-webkit-details-marker{display:none}
+ul,ol{padding-left:1.25em}
+
+/* plan */
+.plan{display:grid;gap:0;margin-top:8px}
+.slot{display:grid;grid-template-columns:86px 1fr;gap:14px;padding-block:12px;border-bottom:1px solid var(--line)}
+.slot .h{font:500 13px var(--f-mono);color:var(--accent);padding-top:2px}
+.slot label{display:flex;gap:10px;align-items:flex-start;cursor:pointer}
+.slot input{margin-top:5px;accent-color:var(--accent)}
+.slot .t{font-weight:600}
+.slot .d{color:var(--muted);font-size:14px}
+.slot.done .t{text-decoration:line-through;color:var(--muted)}
+.slot.rest .h{color:var(--muted)}
+
+/* quiz */
+.qbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:12px 0 16px}
+select,.btn{font:500 14px var(--f-body);padding:8px 12px;border-radius:6px;border:1px solid var(--line);background:var(--surface);color:var(--ink)}
+.btn{cursor:pointer}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px}
+.qmeta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px;font:12px var(--f-mono);color:var(--muted)}
+.qtext{font-size:16.5px;font-weight:500;margin:0 0 12px}
+.opts{display:grid;gap:8px}
+.opt{text-align:left;font:15px/1.45 var(--f-body);padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--ink);cursor:pointer;display:flex;gap:10px}
+.opt .k{font:500 13px var(--f-mono);color:var(--muted);padding-top:1px}
+.opt:hover:not([disabled]){border-color:var(--accent)}
+.opt.right{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+.opt[disabled]{cursor:default}
+.opt.sel{border-color:var(--accent);background:var(--accent-soft)}
+/* examen */
+.exbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:12px 0 16px}
+.exbar .timer.low{color:var(--bad)}
+.dots{display:flex;flex-wrap:wrap;gap:4px;margin-top:14px}
+.dots button{width:26px;height:26px;border-radius:5px;border:1px solid var(--line);background:var(--bg);color:var(--muted);font:500 11px var(--f-mono);cursor:pointer;padding:0}
+.dots button.ans{background:var(--accent-soft);color:var(--ink)}
+.dots button.cur{border-color:var(--accent);outline:1px solid var(--accent)}
+.review{margin-top:18px;display:grid;gap:10px}
+.review .card{padding:14px}
+.review .card p{margin:.3em 0}
+.hist{font-size:13.5px;color:var(--muted)}
+.expl{margin-top:12px;padding:10px 14px;border-radius:8px;background:var(--accent-soft);font-size:14.5px}
+.qnav{display:flex;justify-content:space-between;gap:10px;margin-top:14px;flex-wrap:wrap}
+.score{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-top:20px}
+.sc{border:1px solid var(--line);border-radius:8px;padding:10px 12px;background:var(--surface)}
+.sc .n{font:500 20px var(--f-mono);font-variant-numeric:tabular-nums}
+.sc .l{font-size:13px;color:var(--muted)}
+.meter{height:5px;border-radius:3px;background:var(--line);margin-top:6px;overflow:hidden}
+.meter i{display:block;height:100%;background:var(--accent)}
+.sc.low .meter i{background:var(--bad)} .sc.mid .meter i{background:var(--warn)} .sc.high .meter i{background:var(--ok)}
+
+/* casos */
+.case{margin-top:18px}
+.case h3{margin-top:0;font-family:var(--f-display);font-size:19px}
+.case .prompt{background:var(--bg);border-radius:8px;padding:12px 14px;margin:8px 0}
+.timer{font:500 15px var(--f-mono);font-variant-numeric:tabular-nums}
+@media (max-width:520px){.slot{grid-template-columns:1fr;gap:4px}}
+@media (prefers-reduced-motion:no-preference){.opt{transition:border-color .15s,background .15s}}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="eyebrow">Req-05966 · Roster OPS · Prueba escrita</div>
+  <h1>Entrenamiento PCI y RAM para brotes y emergencias</h1>
+  <p class="lede">Plan de 24 horas, 21 módulos de repaso, banco de <span id="nQ">más de 130</span> preguntas con explicación, examen cronometrado tipo prueba, casos para redactar y cifras clave. Incluye el manual OMS 2024 de vigilancia de IAAS, el curso ECDC de brotes de IAAS y la herramienta ICAR del CDC. Términos en inglés al lado, porque la prueba puede venir en cualquiera de los dos idiomas.</p>
+</header>
+
+<nav class="tabs" role="tablist" id="tabs">
+  <button role="tab" data-tab="plan" aria-selected="true">Plan 24 h</button>
+  <button role="tab" data-tab="repaso" aria-selected="false">Repaso</button>
+  <button role="tab" data-tab="quiz" aria-selected="false">Simulacro</button>
+  <button role="tab" data-tab="examen" aria-selected="false">Examen 120 min</button>
+  <button role="tab" data-tab="casos" aria-selected="false">Casos escritos</button>
+  <button role="tab" data-tab="cifras" aria-selected="false">Cifras clave</button>
+</nav>
+
+<!-- ============ PLAN ============ -->
+<section id="plan" role="tabpanel">
+  <h2>Plan de 24 horas</h2>
+  <p>Construido para alguien fuerte en RAM: la mayor parte del tiempo va a PCI programática y a preparación y respuesta. Marque cada bloque al terminarlo; se guarda en este navegador.</p>
+  <div class="plan" id="planList"></div>
+  <h3>Cómo repartir los 120 minutos el día de la prueba</h3>
+  <div class="tbl"><table>
+    <tr><th>Minutos</th><th>Qué hacer</th></tr>
+    <tr><td class="num">0–5</td><td>Lea todas las instrucciones y cuente cuántas preguntas cerradas y abiertas hay. Calcule el tiempo por bloque según el puntaje de cada sección.</td></tr>
+    <tr><td class="num">5–60</td><td>Preguntas cerradas en una primera pasada: responda lo seguro y marque las dudosas. No se quede más de 90 s en ninguna.</td></tr>
+    <tr><td class="num">60–105</td><td>Preguntas abiertas o casos: esquema de 3 min, luego redacción con la estructura de la regla de oro.</td></tr>
+    <tr><td class="num">105–120</td><td>Vuelva a las dudosas y relea las abiertas para comprobar que cada recomendación tenga responsable, plazo y documento de referencia.</td></tr>
+  </table></div>
+  <div class="note"><b>Regla de oro para la prueba.</b> Cuando una pregunta abierta pida "qué haría", responda con estructura: (1) evaluación rápida, (2) medidas inmediatas de control, (3) coordinación y comunicación, (4) monitoreo y criterio de cierre. Cite el documento OMS/OPS de referencia por su nombre. Eso es lo que distingue a un consultor de un clínico.</div>
+</section>
+
+<!-- ============ REPASO ============ -->
+<section id="repaso" role="tabpanel" hidden>
+  <h2>Repaso por módulos</h2>
+
+  <details open><summary>1. Programa de PCI: componentes básicos, requisitos mínimos, evaluación</summary>
+    <h3>8 componentes básicos OMS (2016) <span class="en">WHO core components</span></h3>
+    <ol>
+      <li>Programas de PCI <span class="en">IPC programmes</span> — nacional y en cada establecimiento, con equipo capacitado y presupuesto.</li>
+      <li>Directrices basadas en evidencia <span class="en">guidelines</span></li>
+      <li>Educación y capacitación <span class="en">education &amp; training</span></li>
+      <li>Vigilancia de IAAS <span class="en">HAI surveillance</span> (incluye datos de RAM)</li>
+      <li>Estrategias multimodales <span class="en">multimodal strategies</span></li>
+      <li>Monitoreo, auditoría y retroalimentación <span class="en">monitoring, audit &amp; feedback</span></li>
+      <li>Carga de trabajo, dotación y ocupación de camas <span class="en">workload, staffing &amp; bed occupancy</span> — un paciente por cama, ≥1 m entre camas, ocupación no mayor a la capacidad diseñada.</li>
+      <li>Entorno construido, materiales y equipos <span class="en">built environment, materials &amp; equipment</span> — agua, saneamiento, higiene (WASH), ventilación, insumos.</li>
+    </ol>
+    <p>Los componentes 1–6 aplican a nivel nacional y de establecimiento; 7–8 a establecimiento. El programa de optimización de antimicrobianos (PROA/AMS) es aliado, pero <b>no</b> es uno de los ocho.</p>
+    <h3>Estrategia multimodal: 5 elementos</h3>
+    <div class="tbl"><table>
+      <tr><th>Elemento</th><th>Lema OMS</th><th>Ejemplo en higiene de manos</th></tr>
+      <tr><td>Cambio de sistema</td><td>Build it</td><td>Alcohol gel en el punto de atención</td></tr>
+      <tr><td>Formación y educación</td><td>Teach it</td><td>Capacitación en los 5 momentos</td></tr>
+      <tr><td>Monitoreo y retroalimentación</td><td>Check it</td><td>Observación de adherencia, consumo de gel</td></tr>
+      <tr><td>Recordatorios y comunicación</td><td>Sell it</td><td>Afiches, campañas, 5 de mayo</td></tr>
+      <tr><td>Cultura de seguridad</td><td>Live it</td><td>Liderazgo, participación de pacientes</td></tr>
+    </table></div>
+    <h3>Requisitos mínimos (OMS 2019) <span class="en">minimum requirements</span></h3>
+    <p>Son el punto de partida para países con recursos limitados o en emergencia: lo que debe existir antes de avanzar hacia la implementación completa de los componentes básicos. Ejemplo: todo establecimiento de atención primaria tiene un punto focal de PCI capacitado; todo hospital de referencia tiene un programa con profesional dedicado.</p>
+    <h3>Herramientas de evaluación</h3>
+    <div class="tbl"><table>
+      <tr><th>Herramienta</th><th>Qué mide</th><th>Niveles</th></tr>
+      <tr><td><b>IPCAF</b> (establecimiento)</td><td>8 componentes, 0–800 puntos</td><td class="num">0–200 inadecuado · 201–400 básico · 401–600 intermedio · 601–800 avanzado</td></tr>
+      <tr><td><b>HHSAF</b> (higiene de manos)</td><td>5 elementos multimodales, 0–500</td><td class="num">0–125 inadecuado · 126–250 básico · 251–375 intermedio · 376–500 avanzado</td></tr>
+      <tr><td><b>IPCAT2</b></td><td>Programa nacional</td><td>Nacional</td></tr>
+      <tr><td><b>WASH FIT</b></td><td>Agua, saneamiento, higiene, residuos, limpieza en establecimientos</td><td>Mejora continua</td></tr>
+      <tr><td><b>SPAR / JEE</b></td><td>Capacidades RSI, incluye PCI como capacidad</td><td>País</td></tr>
+    </table></div>
+    <h3>Marco estratégico global</h3>
+    <ul>
+      <li><b>Estrategia mundial de PCI</b> (WHA76, 2023) y su <b>Plan de acción y marco de monitoreo 2024–2030</b> (WHA77, 2024).</li>
+      <li>PCI es pilar de la RAM: prevenir infecciones reduce uso de antibióticos y diseminación de resistentes. Es el objetivo 3 del Plan de Acción Mundial sobre RAM (reducir incidencia de infecciones).</li>
+    </ul>
+  </details>
+
+  <details><summary>2. Precauciones estándar e higiene de manos</summary>
+    <h3>Elementos de las precauciones estándar</h3>
+    <p>Higiene de manos · EPP según evaluación de riesgo · higiene respiratoria y etiqueta de la tos · prevención de pinchazos y cortopunzantes · inyecciones seguras · limpieza ambiental · manejo de ropa · manejo de residuos · reprocesamiento de dispositivos · ubicación del paciente.</p>
+    <h3>Los 5 momentos</h3>
+    <ol>
+      <li>Antes de tocar al paciente</li>
+      <li>Antes de una tarea limpia/aséptica</li>
+      <li>Después del riesgo de exposición a fluidos corporales</li>
+      <li>Después de tocar al paciente</li>
+      <li>Después de tocar el entorno del paciente</li>
+    </ol>
+    <ul>
+      <li>Fricción con alcohol: <b>20–30 s</b>. Lavado con agua y jabón: <b>40–60 s</b>.</li>
+      <li>Formulaciones OMS: etanol 80 % v/v o isopropanol 75 % v/v.</li>
+      <li>Agua y jabón obligatorio: manos visiblemente sucias, <i>C. difficile</i>, norovirus (formas resistentes al alcohol).</li>
+      <li>Los guantes <b>no</b> sustituyen la higiene de manos: antes de ponerlos y al quitarlos.</li>
+    </ul>
+    <h3>Evaluación de riesgo en el punto de atención</h3>
+    <p>Antes de cada interacción: ¿qué tarea?, ¿qué exposición posible a sangre/fluidos/salpicaduras?, ¿qué estado infeccioso del paciente?, ¿qué EPP corresponde? Es la base de PCI en brotes.</p>
+    <h3>Exposición ocupacional</h3>
+    <p>Pinchazo con riesgo de VIH: PEP lo antes posible, idealmente en 2 horas, hasta 72 h. Vacunación del personal (hepatitis B, influenza, sarampión, etc.), registro de exposiciones, salud ocupacional como parte del programa.</p>
+  </details>
+
+  <details><summary>3. Precauciones basadas en la transmisión y EPP</summary>
+    <div class="tbl"><table>
+      <tr><th>Tipo</th><th>Ejemplos</th><th>Medidas clave</th></tr>
+      <tr><td>Contacto</td><td>MRSA, ERC/EPC, <i>C. auris</i>, <i>C. difficile</i>, norovirus</td><td>Bata + guantes, habitación individual o cohorte, equipo exclusivo</td></tr>
+      <tr><td>Gotas</td><td>Influenza estacional, meningococo, pertussis, difteria</td><td>Mascarilla médica, ≥1 m de separación, habitación individual o cohorte</td></tr>
+      <tr><td>Aérea</td><td>TB, sarampión, varicela</td><td>Respirador N95/FFP2, habitación con ventilación adecuada o presión negativa, personal inmune (sarampión/varicela)</td></tr>
+      <tr><td>Combinadas</td><td>H5N1/influenza nueva, MERS, COVID-19, mpox, Ebola/Marburg</td><td>Según patógeno y procedimiento; ver tabla de brotes</td></tr>
+    </table></div>
+    <div class="note"><b>Terminología OMS 2024.</b> La OMS propuso "transmisión a través del aire" <span class="en">through the air</span>, que abarca corto y largo alcance, en lugar de la dicotomía rígida gotas vs. aerosoles. Conozca ambos lenguajes.</div>
+    <h3>Secuencia de colocación y retiro (CDC)</h3>
+    <ul>
+      <li><b>Colocar:</b> higiene de manos → bata → mascarilla/respirador → protección ocular → guantes.</li>
+      <li><b>Retirar:</b> guantes → protección ocular → bata → mascarilla/respirador (fuera de la habitación) → higiene de manos. Alternativa: bata y guantes juntos.</li>
+      <li>Respirador: prueba de ajuste <span class="en">fit test</span> inicial y verificación de sello <span class="en">seal check</span> cada vez.</li>
+      <li>Procedimientos generadores de aerosoles (intubación, aspiración abierta, RCP, broncoscopía): respirador aunque la precaución base sea gotas.</li>
+    </ul>
+    <h3>Ventilación</h3>
+    <ul>
+      <li>Aislamiento aéreo con ventilación natural: <b>160 L/s por paciente</b> (OMS).</li>
+      <li>Salas generales: 60 L/s por paciente.</li>
+      <li>Ventilación mecánica: <b>≥12 recambios de aire por hora</b> y presión negativa en aislamiento aéreo (OMS; CDC para construcción nueva o renovada).</li>
+      <li>CDC (ICAR, módulo 3) para salas de aislamiento aéreo <span class="en">AIIR</span>: <b>≥6 ACH en instalaciones existentes y ≥12 ACH en nuevas o renovadas</b>; extracción directa al exterior o recirculación por filtro HEPA; presión verificada <b>a diario</b> con indicador visual (tiras, humo) mientras está ocupada; puerta cerrada.</li>
+      <li>Sin sala de aislamiento aéreo: mascarilla médica al paciente, consultorio con puerta cerrada y dejarlo vacío <b>~1 hora</b> tras su salida para que se renueve el aire.</li>
+      <li>Duración de las precauciones (CDC): influenza, gotas por 7 días desde el inicio o hasta 24 h después de resolverse la fiebre y los síntomas respiratorios (lo que sea más largo); estreptococo del grupo A en piel o herida, contacto y gotas hasta 24 h de tratamiento eficaz; <i>C. difficile</i>, contacto mientras dure la diarrea y algunos días después.</li>
+    </ul>
+  </details>
+
+  <details><summary>4. Limpieza, desinfección, esterilización, residuos</summary>
+    <h3>Clasificación de Spaulding</h3>
+    <div class="tbl"><table>
+      <tr><th>Categoría</th><th>Contacto</th><th>Proceso mínimo</th><th>Ejemplo</th></tr>
+      <tr><td>Crítico</td><td>Tejido estéril / vascular</td><td>Esterilización</td><td>Instrumental quirúrgico</td></tr>
+      <tr><td>Semicrítico</td><td>Mucosas, piel no intacta</td><td>Desinfección de alto nivel</td><td>Endoscopios, laringoscopio</td></tr>
+      <tr><td>No crítico</td><td>Piel intacta</td><td>Desinfección de bajo nivel / limpieza</td><td>Tensiómetro, estetoscopio</td></tr>
+    </table></div>
+    <h3>Cloro (hipoclorito de sodio)</h3>
+    <div class="tbl"><table>
+      <tr><th>Concentración</th><th>Uso típico</th></tr>
+      <tr><td class="num">0.05 % (500 ppm)</td><td>Manos y piel cuando no hay jabón ni alcohol (CTC cólera, CTE ébola)</td></tr>
+      <tr><td class="num">0.1 % (1000 ppm)</td><td>Desinfección general de superficies (OMS 2020)</td></tr>
+      <tr><td class="num">0.5 % (5000 ppm)</td><td>Derrames grandes de sangre/fluidos, contextos de FHV</td></tr>
+      <tr><td class="num">2 %</td><td>Excretas y cadáveres en cólera (guías GTFCC/MSF)</td></tr>
+    </table></div>
+    <ul>
+      <li>Limpiar antes de desinfectar. De lo más limpio a lo más sucio, de arriba hacia abajo.</li>
+      <li>Superficies de alto contacto con mayor frecuencia. <i>C. auris</i> y <i>C. difficile</i>: desinfectantes esporicidas o con eficacia probada; los amonios cuaternarios solos no bastan para <i>C. auris</i>.</li>
+      <li>Residuos: segregación en el punto de generación por color, cortopunzantes en contenedor rígido, cadena hasta tratamiento final.</li>
+    </ul>
+  </details>
+
+  <details><summary>5. Vigilancia de IAAS e investigación de brotes</summary>
+    <h3>Definiciones</h3>
+    <ul>
+      <li><b>IAAS:</b> infección que no estaba presente ni incubándose al ingreso; operativamente desde el día 3 de hospitalización (≥48 h).</li>
+      <li><b>Brote:</b> aumento de casos por encima de lo esperado en lugar y tiempo, o ≥2 casos epidemiológicamente vinculados de un patógeno inusual (p. ej., 2 casos de EPC tipo NDM en la misma UCI).</li>
+      <li>Prevalencia puntual vs. incidencia: la prevalencia es barata y rápida; la incidencia (por 1000 días-dispositivo) es mejor para seguimiento.</li>
+    </ul>
+    <h3>Pasos de la investigación de brote</h3>
+    <ol>
+      <li>Preparar el trabajo de campo (equipo, insumos, coordinación)</li>
+      <li>Confirmar la existencia del brote</li>
+      <li>Verificar el diagnóstico (laboratorio)</li>
+      <li>Construir definición de caso y buscar casos</li>
+      <li>Epidemiología descriptiva: tiempo (curva), lugar, persona</li>
+      <li>Formular hipótesis</li>
+      <li>Probar hipótesis (casos y controles, cohorte; tipificación molecular)</li>
+      <li>Refinar hipótesis / estudios adicionales (ambientales)</li>
+      <li>Implementar medidas de control <b>desde el inicio</b>, no al final</li>
+      <li>Comunicar hallazgos y mantener vigilancia hasta cerrar el brote</li>
+    </ol>
+    <p>Definición de caso: amplia (sensible) al inicio para no perder casos; más específica después. Niveles: sospechoso, probable, confirmado.</p>
+    <h3>Curva epidémica</h3>
+    <ul>
+      <li><b>Fuente común puntual:</b> un solo pico; la duración ≈ el rango del período de incubación.</li>
+      <li><b>Fuente común continua:</b> meseta prolongada.</li>
+      <li><b>Propagada:</b> ondas sucesivas separadas por ~un período de incubación (transmisión persona a persona).</li>
+    </ul>
+    <h3>Medidas</h3>
+    <ul>
+      <li>Tasa de ataque = casos / población en riesgo.</li>
+      <li>Letalidad (CFR) = muertes por la enfermedad / casos.</li>
+      <li>Tasa de ataque secundaria = casos entre contactos / contactos susceptibles.</li>
+      <li>Cierre de brote: típicamente 2 períodos de incubación máximos sin casos nuevos (ébola: 42 días).</li>
+      <li><b>R0</b>: casos secundarios promedio en población totalmente susceptible. <b>Rt</b>: el número efectivo en el momento t; si Rt &lt; 1 la epidemia decrece.</li>
+      <li>Umbral de inmunidad de rebaño ≈ 1 − 1/R0. Sarampión (R0 12–18) → ~92–95 %, por eso la meta es ≥95 % de cobertura con dos dosis.</li>
+      <li>Intervalo serial: tiempo entre inicio de síntomas de un caso y el de su caso secundario. Período de incubación: de la exposición al inicio de síntomas.</li>
+      <li>Lista de casos <span class="en">line list</span>: una fila por caso, con fecha de inicio, lugar, persona, criterios de la definición y desenlace. Es la base de la curva y de los informes de situación.</li>
+    </ul>
+  </details>
+
+  <details><summary>6. RSI (2005), PHEIC y marcos de preparación</summary>
+    <h3>Reglamento Sanitario Internacional</h3>
+    <ul>
+      <li>Notificación a la OMS (vía Centro Nacional de Enlace) dentro de <b>24 h</b> tras la evaluación.</li>
+      <li><b>Anexo 2:</b> notificar si se cumplen ≥2 de 4 criterios: impacto grave en salud pública; evento inusual o imprevisto; riesgo significativo de propagación internacional; riesgo de restricciones a viajes o comercio.</li>
+      <li>Siempre notificables: viruela, poliomielitis por poliovirus salvaje, influenza humana por nuevo subtipo, SARS.</li>
+      <li>Siempre evaluar con el algoritmo: cólera, peste neumónica, fiebre amarilla, fiebres hemorrágicas virales, fiebre del Nilo occidental, otras de importancia nacional o regional.</li>
+      <li><b>Enmiendas 2024</b> (WHA77): crean la categoría de <b>emergencia pandémica</b>, la Autoridad Nacional del RSI, principio de equidad y acceso a productos de salud. Entraron en vigor en septiembre de 2025.</li>
+      <li><b>Acuerdo sobre Pandemias</b> de la OMS adoptado en la WHA78 (mayo de 2025); el anexo de acceso a patógenos y participación en beneficios (PABS) quedó para negociación posterior.</li>
+    </ul>
+    <h3>Marco HEPR de la OMS: 5 C</h3>
+    <div class="tbl"><table>
+      <tr><th>Componente</th><th>English</th><th>Dónde entra PCI</th></tr>
+      <tr><td>Vigilancia colaborativa</td><td>Collaborative surveillance</td><td>Vigilancia IAAS, alerta temprana desde hospitales</td></tr>
+      <tr><td>Protección comunitaria</td><td>Community protection</td><td>Comunicación de riesgos, entierros seguros, WASH</td></tr>
+      <tr><td><b>Atención segura y escalable</b></td><td><b>Safe and scalable care</b></td><td><b>Aquí vive PCI</b>: tamizaje, aislamiento, protección del personal</td></tr>
+      <tr><td>Acceso a contramedidas</td><td>Access to countermeasures</td><td>EPP, suministros, vacunas</td></tr>
+      <tr><td>Coordinación de emergencias</td><td>Emergency coordination</td><td>PCI como pilar dentro del SGI/IMS</td></tr>
+    </table></div>
+    <h3>Respuesta OMS/OPS</h3>
+    <ul>
+      <li><b>Marco de Respuesta a Emergencias (ERF):</b> grados 1, 2, 3 (3 = respuesta mayor de toda la organización) y categoría prolongada.</li>
+      <li><b>Sistema de Gestión de Incidentes (IMS):</b> liderazgo; coordinación de socios; información y planificación; operaciones de salud y experticia técnica (aquí PCI); soporte operativo y logística; finanzas y administración.</li>
+      <li><b>GOARN</b> despliega expertos, incluidos de PCI. La red regional de PCI de la OPS y los equipos médicos de emergencia (EMT) aplican estándares mínimos de PCI.</li>
+      <li>Meta de desempeño 7-1-7: detectar en 7 días, notificar en 1, respuesta inicial completa en 7.</li>
+    </ul>
+  </details>
+
+  <details><summary>7. PCI específica por brote</summary>
+    <div class="tbl"><table>
+      <tr><th>Evento</th><th>Precauciones / EPP</th><th>Seguimiento de contactos</th><th>Puntos de examen</th></tr>
+      <tr><td>Ébola / Marburgo</td><td>Contacto + gotas reforzado: guantes (doble en zona roja), bata impermeable u overol, delantal, protección facial completa, respirador en PGA, botas. Observador entrenado en retiro.</td><td class="num">21 días</td><td>Zonificación verde/roja, flujo unidireccional, cloro 0.5 % derrames, entierro seguro y digno, persistencia viral en semen de sobrevivientes, "ring IPC" alrededor de establecimientos con casos.</td></tr>
+      <tr><td>Cólera</td><td>Precauciones estándar + contacto; manejo de excretas</td><td class="num">5 días</td><td>CTC/UTC con zonas, puntos de lavado con cloro 0.05 %, agua segura, manejo de cadáveres, vigilancia de calidad de agua, vacuna oral.</td></tr>
+      <tr><td>Sarampión</td><td>Aérea: N95, aislamiento con ventilación adecuada, solo personal inmune</td><td class="num">21 días</td><td>Aislar 4 días antes y 4 después del exantema; triage en la entrada; verificar inmunidad del personal; profilaxis con vacuna ≤72 h o inmunoglobulina ≤6 días.</td></tr>
+      <tr><td>Mpox</td><td>Contacto + gotas; OMS recomienda bata, guantes, protección ocular y respirador</td><td class="num">21 días</td><td>Manejo de ropa sin sacudir, lesiones cubiertas, aislamiento hasta costras caídas y piel nueva.</td></tr>
+      <tr><td>Influenza aviar H5N1 / nueva</td><td>Contacto + aérea + protección ocular</td><td class="num">10–14 días según guía</td><td>Enfoque Una Salud, exposición a aves/ganado lechero, tamizaje en triage con nexo epidemiológico.</td></tr>
+      <tr><td>Tuberculosis</td><td>Aérea</td><td>Estudio de contactos</td><td>Jerarquía de controles: administrativos, ambientales, protección respiratoria. Triage de tosedores.</td></tr>
+      <tr><td><i>C. auris</i> / EPC</td><td>Contacto, habitación individual o cohorte, personal dedicado</td><td>Tamizaje de contactos (axila-ingle para <i>C. auris</i>, rectal para EPC)</td><td>Notificación inmediata, tamizaje al ingreso de pacientes transferidos, limpieza terminal, comunicación entre establecimientos.</td></tr>
+      <tr><td>Fiebre amarilla / dengue / Oropouche</td><td>Precauciones estándar; control vectorial (mosquiteros en sala)</td><td>No aplica</td><td>Transmisión vectorial: énfasis en sala libre de mosquitos y seguridad transfusional.</td></tr>
+    </table></div>
+    <h3>Jerarquía de controles</h3>
+    <p>Eliminación/sustitución → controles de ingeniería (ventilación, barreras, zonificación) → controles administrativos (tamizaje, triage, políticas, capacitación) → EPP. El EPP es la última línea, no la primera.</p>
+    <h3>Tamizaje y triage <span class="en">screening &amp; triage</span></h3>
+    <p>Identificar en la entrada a quien cumple la definición de caso sospechoso, aislarlo de inmediato en área designada, notificar, y evitar que circule por el establecimiento. Es la medida de PCI más costo-efectiva en un brote.</p>
+  </details>
+
+  <details><summary>8. RAM: lo que puede venir y su conexión con PCI</summary>
+    <p>Usted domina esto. Repase solo los puentes con PCI y emergencias, y las cifras políticas recientes.</p>
+    <ul>
+      <li><b>Directrices OMS 2017 para EPC, ABRC y PARC</b> <span class="en">CRE, CRAB, CRPA</span>: 8 recomendaciones — estrategias multimodales, programas de PCI, higiene de manos, vigilancia (de infecciones y de colonización), precauciones de contacto, aislamiento, limpieza ambiental, cultivos de vigilancia ambiental (solo para ABRC y PARC).</li>
+      <li><b>Lista OMS de patógenos bacterianos prioritarios 2024</b>: críticos — <i>A. baumannii</i> resistente a carbapenémicos, Enterobacterales resistentes a cefalosporinas de 3.ª generación, Enterobacterales resistentes a carbapenémicos, <i>M. tuberculosis</i> resistente a rifampicina. MRSA y VRE quedan en prioridad alta.</li>
+      <li><b>Lista de hongos prioritarios 2022</b>: críticos — <i>C. auris</i>, <i>C. neoformans</i>, <i>A. fumigatus</i>, <i>C. albicans</i>.</li>
+      <li><b>Declaración política ONU sobre RAM (sept. 2024)</b>: reducir 10 % las muertes asociadas a RAM para 2030 (vs. 4.95 millones de 2019), 70 % del consumo humano de antibióticos del grupo Access (AWaRe), meta de financiación catalítica de USD 100 millones, panel independiente de evidencia sobre RAM.</li>
+      <li><b>GLASS</b> para vigilancia; enfoque <b>Una Salud</b> con la Cuadripartita (FAO, PNUMA, OMS, OMSA).</li>
+      <li>En emergencias aumenta la RAM: hacinamiento, falta de WASH, uso empírico de antibióticos, heridas de guerra y desastre (<i>A. baumannii</i>, <i>K. pneumoniae</i> NDM en contextos de conflicto).</li>
+    </ul>
+  </details>
+
+  <details><summary>9. PROA: optimización de antimicrobianos <span class="en">antimicrobial stewardship</span></summary>
+    <p>El PROA corresponde al objetivo 4 del Plan de Acción Mundial sobre RAM (optimizar el uso de antimicrobianos). PCI y PROA son complementarios: PCI evita infecciones y transmisión, y el PROA evita que las que ocurren seleccionen resistencia.</p>
+    <h3>Elementos básicos en el establecimiento (kit OMS 2019)</h3>
+    <ol>
+      <li>Compromiso de la dirección <span class="en">leadership commitment</span>: recursos, tiempo protegido, apoyo formal.</li>
+      <li>Rendición de cuentas y responsabilidades <span class="en">accountability &amp; responsibilities</span>: comité y equipo central (infectología, farmacia, microbiología, enfermería, PCI).</li>
+      <li>Intervenciones de optimización <span class="en">AMS actions</span></li>
+      <li>Educación y capacitación</li>
+      <li>Monitoreo y vigilancia del uso y de la resistencia</li>
+      <li>Informes y retroalimentación</li>
+    </ol>
+    <p>A nivel nacional: gobernanza (comité de RAM o unidad de coordinación), listas de medicamentos esenciales con AWaRe, guías nacionales, regulación de venta sin receta, vigilancia del consumo (GLASS-AMU). La guía de políticas OMS 2021 extiende el PROA de los hospitales a un programa nacional integrado.</p>
+    <h3>Intervenciones con mejor evidencia</h3>
+    <div class="tbl"><table>
+      <tr><th>Intervención</th><th>English</th><th>Qué hace</th></tr>
+      <tr><td>Auditoría prospectiva con retroalimentación</td><td>Prospective audit and feedback</td><td>Revisar prescripciones y recomendar al prescriptor, sin bloquear</td></tr>
+      <tr><td>Preautorización / restricción</td><td>Preauthorization</td><td>Antibióticos Reserve (y algunos Watch) requieren aprobación</td></tr>
+      <tr><td>Revisión a las 48–72 h</td><td>Antibiotic time-out</td><td>Reevaluar con cultivos: suspender, desescalar o ajustar</td></tr>
+      <tr><td>Paso de IV a oral, dosis y duración</td><td>IV-to-oral switch, duration</td><td>Ciclos cortos basados en evidencia</td></tr>
+      <tr><td>Optimización del diagnóstico</td><td>Diagnostic stewardship</td><td>Tomar bien los cultivos, no cultivar colonización, informe selectivo del antibiograma</td></tr>
+    </table></div>
+    <h3>Indicadores</h3>
+    <ul>
+      <li>DDD por 100 camas-día (o por 1000 habitantes-día en comunidad) y días de terapia (DOT) por 1000 pacientes-día.</li>
+      <li>Proporción de antibióticos Access, Watch y Reserve; meta ONU 2030: ≥70 % Access.</li>
+      <li>Encuesta de prevalencia puntual (metodología OMS); la OPS tiene una herramienta propia de prevalencia puntual y de autoevaluación para PROA.</li>
+      <li>Adherencia a guías, duración de tratamiento, profilaxis quirúrgica en dosis única y antes de la incisión.</li>
+    </ul>
+    <h3>PROA en emergencias y brotes</h3>
+    <ul>
+      <li>En COVID-19, la OMS informó que ~75 % de los pacientes hospitalizados recibió antibióticos y solo ~8 % tenía coinfección bacteriana. Es el ejemplo clásico de por qué el PROA debe seguir funcionando en una emergencia.</li>
+      <li>En brotes por EPC o <i>C. auris</i>, el PROA restringe carbapenémicos y antifúngicos y trabaja junto con PCI en el comité del brote.</li>
+      <li>En desastres: guías empíricas simples basadas en AWaRe, provisión de antibióticos Access y laboratorio mínimo para cultivos.</li>
+    </ul>
+  </details>
+
+  <details><summary>10. IAAS por dispositivos y cirugía: paquetes de medidas</summary>
+    <p>Las cuatro IAAS principales son: infección del torrente sanguíneo asociada a catéter central (ITS-CVC), infección urinaria asociada a sonda (ITU-SV), neumonía asociada a ventilador (NAV) e infección del sitio quirúrgico (ISQ). Las tasas se expresan por 1000 días-dispositivo; la ISQ, por 100 procedimientos.</p>
+    <div class="tbl"><table>
+      <tr><th>IAAS</th><th>English</th><th>Medidas del paquete <span class="en">bundle</span></th></tr>
+      <tr><td>ITS-CVC</td><td>CLABSI</td><td>Higiene de manos; máximas barreras estériles en la inserción; antisepsia con clorhexidina &gt;0.5 % en alcohol; evitar la vena femoral en adultos; lista de verificación; revisión diaria de la necesidad y retiro precoz. No se recambian los catéteres de rutina.</td></tr>
+      <tr><td>ITU-SV</td><td>CAUTI</td><td>Solo con indicación; inserción aséptica; sistema cerrado; bolsa por debajo de la vejiga; retiro lo antes posible (recordatorios u órdenes de retiro).</td></tr>
+      <tr><td>NAV</td><td>VAP / VAE</td><td>Cabecera a 30–45°; interrupción diaria de la sedación y prueba de ventilación espontánea; aspiración subglótica; higiene oral; preferir ventilación no invasiva cuando es posible.</td></tr>
+      <tr><td>ISQ</td><td>SSI</td><td>Guía OMS 2016 (actualizada 2018): baño preoperatorio; no rasurar (cortar el vello solo si es necesario); profilaxis antibiótica dentro de los <b>120 min antes de la incisión</b>; antisepsia de piel con clorhexidina en alcohol; no prolongar la profilaxis después de la cirugía; descolonización con mupirocina de portadores de <i>S. aureus</i> en cirugía cardiotorácica y ortopédica; lista de verificación de cirugía segura.</td></tr>
+    </table></div>
+    <p>Las IAAS por dispositivos son la puerta de entrada de muchas bacterias multirresistentes: tienen la misma prioridad en RAM que en PCI.</p>
+  </details>
+
+  <details><summary>11. Preparación, alistamiento y capacidad de expansión</summary>
+    <h3>Conceptos</h3>
+    <ul>
+      <li><b>Preparación</b> <span class="en">preparedness</span>: capacidades permanentes (programa de PCI, reservas, personal formado, planes).</li>
+      <li><b>Alistamiento</b> <span class="en">readiness</span>: lo que se activa ante una amenaza concreta, por ejemplo cuando hay ébola en un país vecino: listas de verificación, unidad de aislamiento identificada, simulacros, EPP posicionado.</li>
+      <li><b>Capacidad de expansión</b> <span class="en">surge capacity</span>, las 4 S: personal <span class="en">staff</span>, insumos <span class="en">stuff</span>, estructura <span class="en">structure</span>, sistemas <span class="en">systems</span>.</li>
+      <li><b>Continuidad de servicios esenciales</b>: PCI protege también la atención de rutina (partos, vacunación, crónicos) durante un brote.</li>
+    </ul>
+    <h3>Herramientas</h3>
+    <div class="tbl"><table>
+      <tr><th>Herramienta</th><th>Para qué</th></tr>
+      <tr><td>JEE <span class="en">Joint External Evaluation</span></td><td>Evaluación externa y voluntaria de las capacidades del RSI</td></tr>
+      <tr><td>SPAR <span class="en">State Party Annual Report</span></td><td>Autoevaluación anual obligatoria del RSI ante la Asamblea Mundial de la Salud</td></tr>
+      <tr><td>NAPHS</td><td>Plan nacional de acción para la seguridad sanitaria, construido con los resultados de JEE y SPAR</td></tr>
+      <tr><td>Simulacros <span class="en">SimEx</span></td><td>De mesa, funcionales o a escala completa; prueban planes antes de la emergencia</td></tr>
+      <tr><td>Revisión intraacción <span class="en">IAR</span></td><td>Durante una respuesta en curso, para corregir el rumbo</td></tr>
+      <tr><td>Revisión posacción <span class="en">AAR</span></td><td>Después de la respuesta: qué funcionó, qué no, qué cambiar</td></tr>
+      <tr><td>ESFT <span class="en">Essential Supplies Forecasting Tool</span></td><td>Estimar EPP, insumos y oxígeno según escenarios de casos</td></tr>
+    </table></div>
+    <h3>Cómo estimar EPP</h3>
+    <p>Número de casos esperados × días de hospitalización × interacciones por día × cambios de EPP por interacción, más el personal de apoyo (limpieza, laboratorio, entierros). Considere reservas para 30–90 días y los tiempos de compra.</p>
+  </details>
+
+  <details><summary>12. Equipos médicos de emergencia y operaciones de campo</summary>
+    <ul>
+      <li><b>EMT</b> <span class="en">Emergency Medical Teams</span>, clasificados en el "Libro azul" de la OMS (2021): <b>tipo 1</b> ambulatorio (móvil o fijo), <b>tipo 2</b> hospitalización con cirugía de emergencia, <b>tipo 3</b> referencia con cuidados intensivos; además, células especializadas (p. ej., aislamiento y PCI, rehabilitación).</li>
+      <li>Los estándares mínimos de los EMT incluyen PCI y WASH: agua, saneamiento, manejo de residuos, esterilización, zonificación y EPP.</li>
+      <li>En las Américas, la OPS apoya la coordinación de EMT internacionales mediante la CICOM <span class="en">Medical Information and Coordination Cell</span> del país afectado.</li>
+      <li><b>Centros de tratamiento</b> (ébola, cólera, infecciones respiratorias graves): zona de bajo riesgo y zona de alto riesgo, flujo unidireccional, separación de pacientes sospechosos y confirmados, áreas de colocación y retiro del EPP, lavado de manos en cada transición.</li>
+    </ul>
+  </details>
+
+  <details><summary>13. Comunicación de riesgos, comunidad y entierros seguros</summary>
+    <ul>
+      <li><b>RCCE</b> <span class="en">Risk Communication and Community Engagement</span>: comunicación bidireccional, temprana, transparente, coordinada y dirigida por la comunidad. Sin confianza, la comunidad oculta casos y evita los centros de salud.</li>
+      <li><b>Infodemia</b>: exceso de información, incluida la falsa. Se maneja con escucha social, respuesta a rumores y vocerías confiables (líderes comunitarios y religiosos).</li>
+      <li><b>Estigma</b>: contra pacientes, sobrevivientes y personal. Use un lenguaje centrado en la persona ("personas con mpox", no "casos de mpox").</li>
+      <li><b>Entierros seguros y dignos</b> <span class="en">Safe and Dignified Burials</span>: protocolo OMS en 12 pasos. Equipo formado con EPP, familia y líderes religiosos involucrados, respeto de los ritos que se puedan adaptar, desinfección con cloro, apoyo psicosocial.</li>
+      <li>El personal de salud es también público de la comunicación: debe saber por qué cambian las medidas de PCI.</li>
+    </ul>
+  </details>
+
+  <details><summary>14. Laboratorio y bioseguridad en brotes</summary>
+    <ul>
+      <li><b>Manual de bioseguridad en el laboratorio de la OMS, 4.ª edición (2020)</b>: enfoque basado en la evaluación de riesgo, en lugar de asignar un nivel fijo a cada patógeno.</li>
+      <li><b>Transporte de muestras</b>: sistema de triple embalaje. <b>Categoría A</b> (UN2814, sustancia infecciosa que afecta a los seres humanos): cultivos o muestras de ébola, Marburgo y otras con riesgo de enfermedad grave. <b>Categoría B</b> (UN3373): la mayoría de las muestras diagnósticas.</li>
+      <li>Toma de muestras con EPP según patógeno; muestras correctas para cada evento (hisopado nasofaríngeo y orofaríngeo, sangre, lesión cutánea en mpox, heces en cólera).</li>
+      <li>En RAM: confirmación de mecanismos en el laboratorio nacional de referencia y envío de datos a ReLAVRA+ y GLASS.</li>
+    </ul>
+  </details>
+
+  <details><summary>15. Contexto de las Américas y de la OPS (2025–2026)</summary>
+    <div class="note"><b>Puede aparecer en la prueba.</b> Las cifras de 2026 provienen de alertas y notas de la OPS consultadas el 22/10/2026. Revise la versión más reciente antes de citarlas.</div>
+    <ul>
+      <li><b>Sarampión:</b> brote multipaís. Entre las semanas epidemiológicas 1 y 28 de 2026 se confirmaron 47.459 casos y 44 muertes en 16 países y un territorio; Guatemala, México, Estados Unidos y Perú concentran el 95 %. La OPS considera muy alto el riesgo ante eventos masivos. La Comisión Regional de Reverificación se reúne del 10 al 13 de noviembre de 2026. Contexto: en noviembre de 2025 Canadá perdió el estatus de eliminación (verifique cómo describe la OPS el estatus regional actual).</li>
+      <li><b>Fiebre amarilla:</b> transmisión sostenida en Sudamérica. En las primeras 7 semanas de 2026 hubo 34 casos y 15 muertes en Bolivia, Colombia, Perú y Venezuela, con detecciones fuera de la Amazonía; la meta es ≥95 % de cobertura en población expuesta.</li>
+      <li><b>Influenza aviar A(H5N1):</b> 75 infecciones humanas en las Américas entre abril de 2022 y marzo de 2026. En la actualización de agosto de 2026 los brotes en animales disminuyen, pero la OPS pide mantener la vigilancia con enfoque Una Salud.</li>
+      <li><b>Arbovirus:</b> dengue con récord histórico en 2024; expansión de Oropouche en 2024–2025 (incluida transmisión vertical); chikungunya.</li>
+    </ul>
+    <h3>La OPS como organización</h3>
+    <ul>
+      <li>Es la oficina regional de la OMS para las Américas y, a la vez, el organismo especializado en salud del sistema interamericano.</li>
+      <li><b>Temas transversales:</b> género, equidad, etnicidad y derechos humanos. Mencionarlos en un caso suma puntos.</li>
+      <li><b>Fondo Rotatorio</b> para la compra de vacunas y <b>Fondo Estratégico</b> para medicamentos e insumos esenciales (antimicrobianos, EPP, pruebas diagnósticas).</li>
+      <li><b>ReLAVRA+</b>: red latinoamericana y del Caribe de vigilancia de la RAM, coordinada por la OPS.</li>
+      <li>El Departamento de Emergencias en Salud de la OPS conduce la preparación y respuesta regional y despliega expertos, incluidos los del roster de PCI.</li>
+    </ul>
+  </details>
+
+  <details><summary>16. El rol del consultor del roster</summary>
+    <p>La prueba evalúa si usted sabe hacer cooperación técnica, no solo si conoce la clínica. Productos típicos de un consultor de PCI y RAM:</p>
+    <ul>
+      <li>Evaluación rápida de PCI en establecimientos (IPCAF, listas de alistamiento, WASH FIT) con un plan de mejora priorizado.</li>
+      <li>Adaptación de guías de la OMS y la OPS al contexto nacional.</li>
+      <li>Capacitación en cascada (formación de formadores), simulacros de colocación y retiro del EPP.</li>
+      <li>Apoyo al IMS nacional como responsable técnico del pilar de PCI.</li>
+      <li>Informe de misión: contexto, objetivos, actividades, hallazgos, recomendaciones priorizadas (inmediatas, a corto y a mediano plazo), responsables y seguimiento.</li>
+    </ul>
+    <p>En las respuestas escritas: priorice, asigne responsables y plazos, piense en la sostenibilidad y en el liderazgo del ministerio, y no en reemplazarlo.</p>
+  </details>
+
+  <details><summary>17. Vigilancia de IAAS: manual práctico OMS 2024 <span class="en">HAI surveillance handbook</span></summary>
+    <p class="en">Fuente: WHO. Surveillance of health care-associated infections at national and facility levels: practical handbook. Geneva: WHO; 2024 (ISBN 9789240101456), en la carpeta de estudio.</p>
+    <h3>Marco y metas</h3>
+    <ul>
+      <li>La Estrategia mundial de PCI (WHA76, 2023) tiene como visión que <i>"para 2030, todas las personas que reciben o prestan atención de salud estén a salvo de infecciones asociadas"</i>. Tiene <b>8 direcciones estratégicas</b>: (1) compromiso político y políticas, (2) programas de PCI activos, (3) integración y coordinación de PCI, (4) conocimiento y capacitación, (5) <b>datos para la acción</b>, (6) abogacía y comunicación, (7) investigación y desarrollo, (8) colaboración y apoyo de actores.</li>
+      <li>La dirección 5, "datos para la acción", es la de vigilancia: los datos se usan <b>para mejorar y no para castigar</b>, con rendición de cuentas y planes de mejora locales.</li>
+      <li><b>Metas centrales</b> del marco de monitoreo 2024–2030 (WHA77): proporción de <b>países</b> con sistema nacional de vigilancia de IAAS y RAM asociada (incluida la alerta temprana de patógenos epidémicos y pandémicos), y proporción de <b>establecimientos terciarios y secundarios</b> con ese sistema: <b>30 % en 2026, 50 % en 2028 y más del 80 % en 2030</b>.</li>
+      <li>Situación: la vigilancia es uno de los componentes de PCI menos implementados. En la encuesta IPCAF 2019, la mediana ponderada del componente de vigilancia fue <b>12.5/100 en países de ingresos bajos y 85/100 en los de ingresos altos</b>.</li>
+    </ul>
+    <h3>Componente básico 4 y requisitos mínimos</h3>
+    <div class="tbl"><table>
+      <tr><th>Nivel</th><th>Requisito mínimo</th></tr>
+      <tr><td>Nacional</td><td>El punto focal nacional de PCI establece un <b>grupo técnico multidisciplinario</b> de vigilancia y monitoreo, que elabora un <b>plan estratégico nacional de vigilancia</b> con infecciones prioritarias según el contexto.</td></tr>
+      <tr><td>Atención primaria</td><td>La vigilancia de IAAS <b>no</b> es un requisito mínimo; se siguen los planes nacionales (por ejemplo, detección y notificación de brotes).</td></tr>
+      <tr><td>Atención secundaria</td><td>Según los planes nacionales o subnacionales.</td></tr>
+      <tr><td>Atención terciaria</td><td><b>Vigilancia activa</b> de IAAS con información de RAM, con estructuras de apoyo (laboratorio confiable, historias clínicas, personal formado) y <b>retroalimentación oportuna y regular</b>, en particular a la dirección del hospital.</td></tr>
+    </table></div>
+    <h3>Carga de enfermedad</h3>
+    <ul>
+      <li>En promedio, el 7 % de los pacientes en países desarrollados y el 15 % en países en desarrollo adquiere al menos una IAAS.</li>
+      <li>Prevalencias combinadas: <b>9.6 % en la Región de las Américas</b>, 27 % en África, 12.9 % en Asia Sudoriental, 12.5 % en Mediterráneo Oriental, 9.7 % en Pacífico Occidental, 8.0 % en la UE/EEE, 3.2 % en Estados Unidos y 7.9 % en Canadá.</li>
+      <li>En UCI, hasta el 30 % de los pacientes tiene una IAAS; la incidencia es de 2 a 20 veces mayor en países de ingresos bajos y medianos, sobre todo en neonatos.</li>
+      <li>El 23.6 % de los casos de sepsis tratados en hospitales son IAAS, y el 48.7 % de las sepsis con disfunción orgánica en UCI de adultos se adquieren en el hospital.</li>
+    </ul>
+    <h3>Métodos</h3>
+    <div class="tbl"><table>
+      <tr><th>Opción</th><th>Características</th></tr>
+      <tr><td>Activa vs. pasiva</td><td>La <b>activa</b> (personal entrenado busca casos con definiciones estándar, casi siempre de forma prospectiva) es la mejor opción. La <b>pasiva</b> usa fuentes no diseñadas para vigilancia: es la menos sensible y la que más subregistro tiene.</td></tr>
+      <tr><td>Basada en el paciente vs. en el laboratorio</td><td>La basada en el paciente vincula laboratorio, clínica y factores de riesgo. La basada solo en laboratorio describe patógenos y RAM, pero sin la fecha de ingreso no distingue una infección comunitaria de una IAAS.</td></tr>
+      <tr><td>Global vs. focalizada</td><td>La global <span class="en">comprehensive</span> cubre todo el hospital (es factible en prevalencia puntual). La focalizada <span class="en">targeted</span> se concentra en UCI, dispositivos, ISQ de ciertos procedimientos, UCI neonatal o inmunocomprometidos; es más eficiente, pero puede pasar por alto brotes en otros servicios.</td></tr>
+      <tr><td>Prevalencia vs. incidencia</td><td>La <b>prevalencia</b> es una foto (puntual o de periodo): rápida, barata y útil a nivel nacional para todos los tipos de IAAS. La <b>incidencia</b> es prospectiva y más confiable; es la mejor para tendencias, evaluar intervenciones y detectar brotes, pero consume más recursos.</td></tr>
+    </table></div>
+    <p>Criterios para elegir qué vigilar de forma focalizada: frecuencia, gravedad, recursos, poblaciones de riesgo, historial de brotes, exigencias regulatorias, prevenibilidad, capacidad diagnóstica, prioridades de los actores y posibilidad de comparación (<i>benchmarking</i>).</p>
+    <h3>Cálculos (ejemplos del manual)</h3>
+    <div class="tbl"><table>
+      <tr><th>Medida</th><th>Fórmula</th><th>Ejemplo</th></tr>
+      <tr><td>Prevalencia puntual</td><td>Pacientes con ≥1 IAAS el día de la encuesta / pacientes encuestados × 100</td><td class="num">25/250 = 10 %</td></tr>
+      <tr><td>Incidencia acumulada</td><td>Pacientes con IAAS nueva / pacientes ingresados × 100</td><td class="num">10/200 = 5 %</td></tr>
+      <tr><td>Densidad de incidencia</td><td>IAAS / días-paciente × 1000</td><td class="num">5/1500 = 3.3 ‰ días-paciente</td></tr>
+      <tr><td>Densidad por dispositivo</td><td>IAAS asociadas / días-dispositivo × 1000</td><td class="num">8/600 = 13.3 ITU-SV ‰ días-sonda</td></tr>
+      <tr><td>Razón de utilización de dispositivo</td><td>Días-dispositivo / días-paciente</td><td class="num">400/1000 = 0.40</td></tr>
+    </table></div>
+    <p>Sesgos frecuentes: capacidad y calidad del laboratorio, poco uso de diagnósticos cuando el paciente paga, baja concordancia entre evaluadores, subregistro y sesgo de detección (se registran más los casos graves).</p>
+    <h3>Ciclo de la vigilancia: 6 elementos</h3>
+    <p>Planificación (objetivos <b>SMART</b>, protocolo, definiciones) → recolección de datos → análisis → interpretación → comunicación y retroalimentación → monitoreo y evaluación del sistema. Cada elemento tiene buenas prácticas a nivel nacional y de establecimiento; por ejemplo, comparar los datos nacionales con referencias internacionales y los del hospital con otros establecimientos.</p>
+    <h3>Nuevas definiciones de caso simplificadas OMS 2024 (Anexo 1)</h3>
+    <p>Fueron diseñadas para entornos con recursos limitados y se basan en las del CDC y el ECDC. Una IAAS se asocia a un dispositivo si este estaba colocado <b>2 días antes</b> de cumplirse por primera vez un componente de la definición.</p>
+    <div class="tbl"><table>
+      <tr><th>IAAS</th><th>Categorías</th></tr>
+      <tr><td>Infección del torrente sanguíneo (ITS)</td><td><b>BSI-A1</b>: 1 hemocultivo con patógeno reconocido. <b>BSI-A2</b>: fiebre &gt;38 °C, escalofríos o hipotensión, más <b>2 hemocultivos</b> con comensal cutáneo en muestras separadas dentro de 48 h. <b>BSI-B</b> (sospechosa): signo, más tratamiento iniciado, más 1 hemocultivo con comensal. <b>SUSI</b> (infección sistémica sospechada no identificada): signo, más tratamiento, <b>sin hemocultivo</b>. <b>CVC-BSI</b>: A1, A2 o B con CVC colocado hace ≥2 días.</td></tr>
+      <tr><td>Infección urinaria (ITU)</td><td><b>UTI-A</b>: ≥1 síntoma más urocultivo ≥10<sup>5</sup> UFC/mL con no más de 2 especies. <b>UTI-B</b>: ≥2 síntomas más tira reactiva, piuria, Gram u otros hallazgos. <b>UTI-C</b>: ≥3 síntomas más diagnóstico o tratamiento del clínico. <b>CAUTI</b>: con sonda colocada hace ≥2 días.</td></tr>
+      <tr><td>Infección del sitio quirúrgico (ISQ)</td><td>Dentro de los <b>30 días</b> posteriores a la cirugía. <b>SSI-A</b>: evidencia microbiológica, radiológica o histopatológica. <b>SSI-B</b>: reapertura de la herida o absceso. <b>SSI-C</b>: secreción purulenta. <b>SSI-D</b>: diagnóstico del cirujano o del médico tratante. Se estratifica en superficial, incisional profunda y de órgano o espacio.</td></tr>
+      <tr><td>Neumonía (NEU)</td><td><b>PNM-A</b>: ≥2 signos, más imagen, más microbiología. <b>PNM-B</b>: ≥2 signos más imagen. <b>PNM-C</b> (clínica): ≥3 signos. <b>NAV</b>: con ventilación mecánica o intubación hace ≥2 días.</td></tr>
+    </table></div>
+    <p><b>Validación</b> (prevalencia puntual en 9 países, 18 hospitales y 5557 adultos, en 2023): IAAS en el 17.9 % según la OMS frente al 11.7 % según el ECDC. Concordancia del 95.1 % en ITS (sensibilidad del 100 %), 99.6 % en ITU, 97.9 % en ISQ y 95.7 % en neumonía, que tuvo la sensibilidad más baja (80 %). La OMS insiste en seguir usando las definiciones del CDC o el ECDC donde sea posible y en preferir criterios microbiológicos o radiológicos.</p>
+    <h3>Definición de vigilancia vs. diagnóstico clínico</h3>
+    <p>La definición de vigilancia sirve a la salud pública: usa criterios objetivos, se aplica a nivel poblacional, prioriza la <b>consistencia</b> e incluye criterios temporales. El diagnóstico clínico guía la atención: usa criterios subjetivos y objetivos, se aplica al individuo y prioriza la <b>exactitud</b>. Una cosa no reemplaza a la otra.</p>
+    <h3>Vigilancia de IAAS en emergencias de salud pública</h3>
+    <ul>
+      <li>Tiene 5 objetivos: detección temprana de casos y brotes en los establecimientos, monitoreo de la carga de IAAS (incluidos los daños involuntarios por la reorganización de los servicios), orientación de las estrategias de PCI, asignación racional de recursos y datos para la toma de decisiones.</li>
+      <li><b>Integración con la alerta temprana</b> <span class="en">EWAR</span>. Componente basado en indicadores: notificar a todo paciente hospitalizado con síntomas nuevos que cumplan la definición de caso, con la <b>fecha de ingreso y la fecha de inicio de síntomas</b> (por ejemplo, síntomas respiratorios, diarrea acuosa aguda o exantema). Componente basado en eventos: criterios preestablecidos para notificar conglomerados, como un aumento inusual de pacientes con síntomas compatibles después del ingreso y una exposición común (misma sala o procedimiento).</li>
+    </ul>
+    <h3>Vigilancia digital y automatizada</h3>
+    <ul>
+      <li><b>Totalmente automatizada</b>: el algoritmo hace todo, desde la recolección hasta la confirmación. <b>Semiautomatizada</b>: el algoritmo señala a los pacientes con alta probabilidad de IAAS y una persona confirma, con lo que se revisan muchas menos historias.</li>
+      <li>Requiere datos estandarizados e interoperables, protección de datos y gobernanza (transparencia de los algoritmos). La red europea <b>PRAISE</b> (2019) orienta su diseño. Puede requerir nuevas métricas, como la bacteriemia de inicio hospitalario.</li>
+      <li>Experiencias exitosas: KISS en Alemania, Viet Nam (con el CDC y PATH desde 2016) y Brasil (criterios nacionales desde 2009).</li>
+    </ul>
+  </details>
+
+  <details><summary>18. Investigación de brotes de IAAS en hospitales de agudos (curso ECDC)</summary>
+    <p class="en">Fuentes: presentaciones del curso ECDC "Investigation and control of outbreaks of HAI" (A. Hajdu, S. Haller, 2023), en la carpeta de estudio.</p>
+    <h3>Tipos de brote en establecimientos de salud</h3>
+    <div class="tbl"><table>
+      <tr><th>No específicos de la atención</th><th>Específicos de la atención</th></tr>
+      <tr><td>Más frecuentes; ocurren también en la comunidad: respiratorios (influenza, SARS-CoV-2, VSR, sarampión), <i>Legionella</i>, entéricos (norovirus, rotavirus). Pueden ser estacionales y afectan también al personal. Muchos casos (cierran servicios), pero pocas o ninguna muerte.</td><td>Menos frecuentes; ocurren sobre todo en hospitales: ITS en UCI, ISQ. Suelen deberse a microorganismos multirresistentes (MRSA, BLEE, EPC) o "nosocomiales" (<i>Acinetobacter</i>, <i>P. aeruginosa</i>). Pocos casos, pero con letalidad que puede ser alta.</td></tr>
+    </table></div>
+    <h3>¿Qué es un brote? (3 criterios)</h3>
+    <ol>
+      <li>Dos o más casos vinculados de la misma infección.</li>
+      <li>Número observado de casos o aislamientos mayor que la línea de base.</li>
+      <li><b>Un solo caso</b> por un patógeno raro o significativo, por ejemplo una <b>legionelosis asociada a la atención</b>.</li>
+    </ol>
+    <p>Hay brotes que no se presentan como un conglomerado evidente de casos similares; conviene sospecharlos.</p>
+    <h3>¿Quién investiga y cuándo se escala?</h3>
+    <ul>
+      <li>La investigación inicial siempre es necesaria. La lidera el <b>equipo local de PCI</b>, junto con el personal médico y de enfermería del servicio y microbiología. Según el caso se suman mantenimiento (agua, ventilación), limpieza, farmacia, salud ocupacional, la dirección y la autoridad de salud pública local. Conviene tener un procedimiento operativo estándar de brotes.</li>
+      <li><b>Investigación completa</b> si aparecen casos nuevos a pesar de las medidas, si el impacto es grande (casos graves, presentación inusual, letalidad alta, cepa o <b>mecanismo de RAM nuevo</b>), si se sospecha <b>contaminación intrínseca de un producto</b>, si hay muchos casos o si están afectados varios servicios.</li>
+      <li>Se involucra la autoridad regional o nacional en brotes complejos, <b>multiinstitucionales</b>, cuando hace falta apoyo epidemiológico o microbiológico avanzado, en brotes de alto perfil mediático o con fines de formación (FETP, EPIET).</li>
+    </ul>
+    <h3>Los 12 pasos (Hajdu)</h3>
+    <ol>
+      <li><b>Sospecha</b>: la notan clínicos, infectología o la enfermera de vigilancia de IAAS, o el laboratorio, por aumento de aislamientos de la misma especie o genotipo.</li>
+      <li><b>Confirmación</b>: verificar el diagnóstico (patógeno verdadero vs. contaminación, <b>seudobrote</b>), revisar datos históricos y la línea de base, considerar brotes en la comunidad y hacer una visita al servicio: observar procedimientos, hablar con el personal, revisar casos con una definición provisional, buscar vínculos (misma sala, mismo equipo), revisar higiene, estructura y dotación.</li>
+      <li><b>Medidas de control primarias y notificación</b>: precauciones basadas en la transmisión, aislamiento o cohorte, reforzar el cumplimiento y ajustar prácticas (por ejemplo, en <i>C. difficile</i>, lavado de manos con agua y jabón y desinfectante esporicida). Pedir al laboratorio que <b>guarde los aislamientos para tipificación</b>. Documentar en una bitácora y notificar a la autoridad según la norma.</li>
+      <li><b>Revisión de la situación</b>, con 3 desenlaces posibles: (a) se descarta el brote; (b) se confirma, pero el impacto es bajo y se controla con medidas genéricas; (c) se confirma con impacto alto, sin control con medidas genéricas o en un entorno de alto riesgo (UCI, UCIN, trasplante, diálisis), lo que exige investigación completa.</li>
+      <li><b>Definición de caso formal</b> con criterios de persona, lugar y tiempo y criterios clínicos, epidemiológicos y de laboratorio, en categorías confirmado, probable y posible. Debe ser lo bastante sensible para captar el alcance real y lo bastante específica para no inflar el número de casos; evoluciona de "patógeno identificado" a "genotipo de la cepa del brote". Búsqueda prospectiva y retrospectiva.</li>
+      <li><b>Lista de casos</b> <span class="en">line list</span> con datos demográficos y desenlace, ubicación (habitación, cama, traslados con fechas), infección o colonización, fecha de inicio, exposiciones previas (medicamentos, cirugía, endoscopia, dispositivos con fechas, personal tratante) y laboratorio (patógeno, tipificación, fecha de toma y de informe).</li>
+      <li><b>Curva epidémica</b>, planos de ubicación y líneas de tiempo de estancia por paciente.</li>
+      <li><b>Investigación microbiológica y ambiental</b>, considerada desde el inicio: tamizaje de pacientes y contactos, del personal si está indicado, tipificación y pruebas de resistencia a desinfectantes.</li>
+      <li><b>Hipótesis</b> sobre la fuente, el modo o vehículo de transmisión y la práctica implicada.</li>
+      <li><b>¿Hace falta probarla?</b> Solo si el estudio aporta algo, hay apoyo metodológico y estadístico, el número de casos y controles es suficiente y se dispone de datos de exposición.</li>
+      <li><b>Estudio analítico</b>: de <b>cohorte</b>, que compara la incidencia en expuestos y no expuestos y estima el <b>riesgo relativo</b> (por ejemplo, el equipo quirúrgico X frente al Y en ISQ por MRSA); o de <b>casos y controles</b>, que compara la exposición y estima la <b>razón de momios (OR)</b> (por ejemplo, la solución de infusión Q en ITS por <i>Serratia</i>).</li>
+      <li><b>Control y evaluación</b>: medidas genéricas y dirigidas (higiene de manos, cierre parcial o total del servicio, cohortes, limpieza reforzada, eliminación de vehículos contaminados, <b>retiro de productos</b>, cambio de desinfectante), actualización de protocolos y capacitación, informe interno, boletín o artículo, y lecciones aprendidas.</li>
+    </ol>
+    <p>La versión clásica de 10 pasos (Haller) es: establecer la existencia del brote → confirmar el diagnóstico → definir caso → buscar casos → generar hipótesis con la epidemiología descriptiva → probarlas con epidemiología analítica → sacar conclusiones → investigaciones adicionales → comunicar → ejecutar medidas de control y prevención. En la práctica los pasos <b>no son estrictamente cronológicos</b>: se parecen más a armar un rompecabezas.</p>
+    <h3>Artefactos y seudobrotes</h3>
+    <ul>
+      <li><b>En el numerador</b>: mayor conciencia del problema, cambios en la vigilancia, contar casos prevalentes como incidentes al introducir un tamizaje, errores de laboratorio.</li>
+      <li><b>En el denominador</b>: cambios en la población en riesgo (pacientes, consultas). En IAAS el denominador puede ser poco habitual: ¿todos los pacientes o solo los inmunosuprimidos?, ¿hospitalización o procedimiento (colonoscopia, cirugía)?</li>
+      <li>Seudobrotes: aumentos no ligados a un cambio real de la incidencia, por ejemplo por contaminación de muestras en el laboratorio.</li>
+    </ul>
+    <h3>Epidemiología descriptiva en IAAS</h3>
+    <p><b>3P</b>: tiempo, lugar y persona, a las que se suma el "bicho" (especie, fenotipo o antibiograma, tipificación). <b>5W</b>: qué, quién, dónde, cuándo y por qué/cómo. Fuentes: historias médicas y de enfermería, hojas de fiebre, informes de microbiología, notas quirúrgicas, registros de procedimientos y de farmacia, radiología y patología. En las IAAS hay <b>más datos</b> que en un brote comunitario, con riesgo de perderse en ellos. Las medidas generales de PCI suelen ser eficaces.</p>
+    <h3>Muestreo ambiental: cuándo y cómo interpretarlo</h3>
+    <ul>
+      <li>Solo <b>guiado por una hipótesis</b>, según las características del agente y los datos descriptivos. Nunca como muestreo de rutina indiscriminado.</li>
+      <li>Puede no ser concluyente si se tomó después de la limpieza y desinfección de las medidas inmediatas.</li>
+      <li>Muestras de agua con <b>falsos negativos</b>: bacterias formadoras de biopelícula que se liberan de forma intermitente y efecto del cloro del agua potable.</li>
+      <li>Un positivo <b>no prueba</b> por sí solo que esa sea la fuente.</li>
+    </ul>
+    <h3>Ejemplos de hipótesis típicas</h3>
+    <ul>
+      <li><i>S. aureus</i> en neonatos durante meses: transmisión por contacto a partir de un portador entre el personal.</li>
+      <li><i>P. aeruginosa</i> o <i>Acinetobacter</i> respiratorio en UCI: reservorio ambiental persistente (sifones, lavamanos) y mala higiene de manos.</li>
+      <li>Aspergilosis en hematología: obras o demolición cercanas, transmisión por la ventilación.</li>
+      <li>Vehículo común con contaminación <b>intrínseca</b> (de fábrica: inmunoglobulina IV, solución peritoneal, enjuague bucal) o <b>extrínseca</b> (en el uso: viales multidosis, endoscopio).</li>
+    </ul>
+    <h3>Mensaje central</h3>
+    <p>La mayoría de los brotes de IAAS se resuelven con la <b>observación en terreno</b> de actividades clave (preparación de medicamentos, higiene de manos, cuidado de accesos vasculares, reprocesamiento), la identificación de prácticas no documentadas o desviaciones de protocolos, la conversación con el personal y los datos descriptivos. La evidencia microbiológica más las fallas de PCI observadas suelen bastar para actuar.</p>
+    <h3>Tipificación y secuenciación genómica <span class="en">WGS</span></h3>
+    <ul>
+      <li>La WGS es hoy el <b>estándar de oro</b> de la subtipificación. Ventajas: mayor poder discriminatorio, detección de genes de resistencia y virulencia, y posibilidad de reconstruir cadenas de transmisión.</li>
+      <li>Limitaciones: costo, <b>tiempo de respuesta</b> y necesidad de personal experto en genómica y bioinformática.</li>
+      <li>Se presenta como árbol de máxima verosimilitud o árbol de expansión mínima. Antes se usaban la electroforesis en campo pulsado (PFGE) y la macrorrestricción del ADN.</li>
+    </ul>
+    <h3>Casos de enseñanza</h3>
+    <ul>
+      <li><b>UCIN de Bremen, Alemania (2011–2012)</b>: <i>K. pneumoniae</i> productora de BLEE; 37 lactantes afectados, 10 ITS y 7 muertes; la unidad se cerró. Todos los aislamientos secuenciados (48 de 31 casos) estaban a ≤12 SNP. Lecciones: <b>detección tardía</b>; muchos casos no conocidos; la cohorte y las barreras se aplicaron <b>solo a los casos conocidos</b>; el brote pasó a otros servicios; los reingresos reintrodujeron la cepa; la transmisión fue persona a persona (el caso es la fuente); influyeron la falta de personal (sobre todo de noche) y el hacinamiento. Al introducir el tamizaje sistemático apareció el verdadero tamaño del brote. Se estimó que solo se conocía un tercio de los casos.</li>
+      <li><b><i>Burkholderia cepacia</i> (Alemania, 2018)</b>: enjuague bucal recomendado para prevenir la NAV, contaminado de fábrica; 34 casos y 5 muertes; la genotipificación identificó la <b>fuente común</b>.</li>
+      <li>Ejemplo de definición de caso (<i>Pantoea agglomerans</i>, UCI): <b>confirmado</b> = paciente de la UCI en el periodo con cualquier muestra positiva; <b>probable</b> = choque séptico fulminante sin muestra o con muestra negativa; <b>posible</b> = signos de infección sin muestra o con muestra negativa.</li>
+    </ul>
+    <h3>Cadena de infección y reservorios</h3>
+    <p>Agente → reservorio → puerta de salida → modo de transmisión (vector: manos, endoscopio) → puerta de entrada → huésped susceptible. Las fuentes pueden ser <b>endógenas</b> (flora de piel, tubo digestivo, vías urinarias o respiratorias del propio paciente) o <b>exógenas</b> (personal, visitantes, equipos, dispositivos, ambiente, alimentos, aire, medicamentos). <b>Colonización</b> es la presencia de microorganismos sin signos clínicos; <b>infección</b> es la reacción adversa a su presencia. En la transmisión persona a persona, el portador colonizado no detectado sostiene el brote; por eso es clave el <b>tamizaje microbiológico</b> temprano y sistemático.</p>
+    <p>Factores de riesgo del paciente: antibióticos previos (sobre todo cefalosporinas y quinolonas), edad avanzada, hospitalización, residencia en un centro de larga estancia, dispositivos (sondas urinarias y de alimentación, catéteres IV, traqueostomía), inmunosupresión, heridas crónicas y enfermedades crónicas como la diabetes.</p>
+  </details>
+
+  <details><summary>19. Vigilancia para detectar brotes de IAAS: manual y automatizada (curso ECDC)</summary>
+    <ul>
+      <li><b>Definición de vigilancia (RSI 2005)</b>: recopilación, cotejo y análisis sistemáticos y continuos de datos con fines de salud pública, y difusión oportuna de la información para su evaluación y para dar la respuesta de salud pública que proceda. Implica un vínculo directo con la acción.</li>
+      <li>Propósitos de la vigilancia de IAAS: describir la carga, monitorear tendencias, identificar patógenos o mecanismos de resistencia nuevos y <b>detectar brotes</b>.</li>
+      <li>Tipos: basada en indicadores o en eventos; activa o pasiva; nacional o centinela; global o por unidades centinela; sindrómica o basada en diagnóstico; basada en paciente o laboratorio; obligatoria o voluntaria; manual o automatizada.</li>
+    </ul>
+    <div class="tbl"><table>
+      <tr><th>Basada en indicadores <span class="en">IBS</span></th><th>Basada en eventos <span class="en">EBS</span></th></tr>
+      <tr><td>Datos estructurados de rutina: recolectar → analizar → interpretar.</td><td>Información no estructurada (rumores, medios, comunicaciones del personal): tamizar → filtrar → validar.</td></tr>
+      <tr><td colspan="2">Ambas generan una <b>señal</b>, que se confirma, evalúa e investiga; si corresponde, se emite una alerta de salud pública y se ponen en marcha la respuesta y las medidas de control. Lo ideal es <b>combinar ambas</b>.</td></tr>
+    </table></div>
+    <h3>Vigilancia tradicional en el hospital</h3>
+    <ul>
+      <li>Suele ser <b>activa, basada en el paciente y prospectiva</b>, a cargo del personal de PCI, y puede ser global o por prioridades.</li>
+      <li>Fuentes del numerador: ingresos, egresos y traslados; microbiología; visitas a los servicios; historias clínicas (laboratorio, imágenes, notas, temperatura, antibióticos); para la ISQ tras el alta, consulta quirúrgica, urgencias o el propio paciente. Fuentes del denominador: ingresos y traslados, y días-dispositivo (ventilador, CVC, sonda) o registros de quirófano.</li>
+      <li>Puede pasar por alto conglomerados si no se vigilan todas las IAAS o todas las unidades, si no hay acceso fácil a listados de laboratorio o si falta personal de PCI. Por eso hace falta un <b>sistema intrahospitalario de notificación de brotes</b>: canales formales e informales entre clínicos, laboratorio y PCI.</li>
+      <li>Aun cuando es cercana al evento, la vigilancia de IAAS es esencialmente "retrospectiva": detecta desenlaces que ya ocurrieron.</li>
+    </ul>
+    <h3>Vigilancia basada en el laboratorio</h3>
+    <ul>
+      <li>Es la más <b>oportuna</b> (el laboratorio tiene la primera oportunidad de ver un microorganismo o patrón de resistencia emergente), puede ser integral (todos los pacientes y todos los microorganismos) y es factible porque los datos ya están estructurados.</li>
+      <li>Usa algoritmos predefinidos con umbrales sobre la línea de base: los valores atípicos se tratan como brotes sospechosos y se notifican a PCI. Hay que equilibrar sensibilidad y especificidad y se necesita apoyo estadístico. La mayor inversión está en montar el sistema; mantenerlo cuesta poco. Ejemplo: eventos LabID del NHSN.</li>
+    </ul>
+    <h3>Vigilancia automatizada</h3>
+    <ul>
+      <li>Se apoya en historias clínicas electrónicas y en datos estructurados (administrativos, microbiología); el procesamiento de lenguaje natural podría incorporar en el futuro los datos no estructurados.</li>
+      <li>Ventajas: exactitud, reproducibilidad y detección temprana. Ojo: el trabajo <b>se traslada de PCI a TI</b>, sin que necesariamente disminuya el tiempo total de personal.</li>
+      <li>Métodos de detección automática de brotes (revisión de Leclère, 2017; 29 estudios): <b>control estadístico de procesos, estadística de escaneo, modelamiento estadístico, umbrales simples y minería de datos</b>. Son una herramienta de apoyo, no una solución autónoma.</li>
+      <li>Grados de automatización en la encuesta de prevalencia del ECDC: totalmente manual; denominador automatizado; semiautomatizada; totalmente automatizada.</li>
+    </ul>
+    <h3>Nivel regional y nacional: el ejemplo alemán</h3>
+    <ul>
+      <li>Notificación obligatoria de brotes de IAAS: del hospital a la autoridad local, de ahí al instituto del estado federado y al Robert Koch Institute (RKI), según la Ley de Protección contra Infecciones (IfSG, §6 y §23).</li>
+      <li><b>KISS</b>: vigilancia voluntaria de IAAS en más de 800 hospitales, por módulos (UCI, neonatología, hematooncología, <i>C. difficile</i>); la retroalimentación continua por sí misma redujo las tasas (efecto de la vigilancia). <b>ARS</b>: vigilancia de RAM basada en laboratorio, con cerca de un tercio de los aislamientos del país.</li>
+      <li>En 2022, la detección automatizada en los datos de notificación identificó un aumento de <i>K. pneumoniae</i> productora de NDM-1 vinculado a pacientes procedentes de Ucrania.</li>
+      <li>Pirámide de vigilancia: entre todas las infecciones y los casos notificados se pierden casos por <b>subdetección</b> (no consultan o no se diagnostican) y por <b>subnotificación</b>.</li>
+    </ul>
+    <h3>Evaluación de sistemas de vigilancia</h3>
+    <p>Debe hacerse periódicamente, revisando atributos como oportunidad, completitud, sensibilidad, valor predictivo positivo, representatividad, simplicidad, flexibilidad y aceptabilidad. Marcos de referencia: CDC (2001, y 2004 para detección temprana de brotes) y OMS (2006). El ciclo es diseñar, implementar, operar y evaluar.</p>
+    <h3>Datos europeos</h3>
+    <ul>
+      <li>Encuesta de prevalencia puntual del ECDC 2016–2017: 1735 hospitales de 28 países y 310 755 pacientes. <b>Prevalencia de IAAS del 5.9 %</b> (rango entre países de 2.9 a 10.0 %).</li>
+      <li>Patógenos más frecuentes: <i>E. coli</i> 16.1 %, <i>S. aureus</i> 11.6 %, <i>Klebsiella</i> 10.4 %, <i>Enterococcus</i> 9.7 %, <i>P. aeruginosa</i> 8.0 %. Grupo <b>ESKAPE+E</b>: <i>E. faecium, S. aureus, K. pneumoniae, A. baumannii, P. aeruginosa, Enterobacter</i>, más <i>E. coli</i>.</li>
+    </ul>
+    <h3>¿Proporción o densidad? El denominador importa</h3>
+    <p>La sala A tuvo 10 infecciones en 100 pacientes (10 %) con 300 días-paciente, es decir <b>33.3 por 1000 días-paciente</b>. La sala B tuvo 20 en 150 pacientes (13.3 %) con 750 días-paciente, es decir <b>26.7 por 1000</b>. B tiene mayor proporción, pero menor densidad, porque sus estancias son más largas. Para comparar riesgo entre servicios con estancias distintas se usa la densidad de incidencia.</p>
+  </details>
+
+  <details><summary>20. Comunicación de datos de un brote: público, personal y directivos (curso ECDC)</summary>
+    <ul>
+      <li>Los brotes no se pueden ocultar: hay que <b>anunciar lo antes posible</b>. El primer anuncio es crítico porque evita rumores, evita la pérdida de confianza cuando otro revela la situación y descarta la sospecha de encubrimiento. Los medios preguntarán: <i>"¿Qué sabían y cuándo lo supieron?"</i></li>
+      <li>Prepararse: informar <b>primero a los socios y a la dirección</b>, establecer el contacto con ellos antes y <b>no ir solo</b>. El responsable de comunicaciones necesita el aporte técnico de PCI, porque tiende a minimizar la gravedad.</li>
+      <li>Barreras a la transparencia: miedo a la mala reputación, a asustar a los pacientes o a revelar debilidades de infraestructura; mala planificación (no preparar el mensaje ni las respuestas) y falta de formación para dar malas noticias o hablar de incertidumbre.</li>
+      <li><b>Percepción del riesgo</b>: la gente acepta menos un riesgo creado por otros, sin beneficio claro, de origen humano, de fuente no confiable o exótico. A mayor angustia, mayor riesgo percibido. Siempre hay que decir al público o al personal <b>qué pueden hacer</b> para reducir su riesgo.</li>
+      <li><b>Cuatro factores de credibilidad</b>: empatía y cuidado; honestidad y apertura; dedicación y compromiso; competencia y experticia.</li>
+    </ul>
+    <h3>Los 8 pasos del mensaje</h3>
+    <ol>
+      <li>Empezar con <b>empatía</b>.</li>
+      <li>Identificar y explicar la amenaza: qué la causa, quién está en riesgo y qué hacer, sin tranquilizar en exceso ni prometer de más.</li>
+      <li>Explicar lo que se sabe y lo que no.</li>
+      <li>Explicar qué se hace para saber más y cuándo se volverá a informar.</li>
+      <li>Explicar qué se hace para reducir el riesgo.</li>
+      <li>Explicar qué acciones se toman y por qué: compartir dilemas, ser abierto sobre decisiones tomadas con información incompleta y anticipar que las recomendaciones pueden cambiar.</li>
+      <li>Expresar compromiso y urgencia, y decir dónde y cuándo habrá más información.</li>
+      <li>Mantener una actitud científica: calma y confianza ante preguntas agresivas, sin evadirlas.</li>
+    </ol>
+    <div class="tbl"><table>
+      <tr><th>Hacer</th><th>No hacer</th></tr>
+      <tr><td>Fijar expectativas realistas</td><td>Prometer de más</td></tr>
+      <tr><td>Lenguaje claro, definir siglas</td><td>Usar jerga</td></tr>
+      <tr><td>Refutar una acusación <b>sin repetirla</b></td><td>Repetir la acusación negativa</td></tr>
+      <tr><td>Centrarse en los hechos</td><td>Especular sobre hipotéticos</td></tr>
+      <tr><td>Dar la mejor estimación del riesgo según la ciencia</td><td>Hablar en absolutos</td></tr>
+      <tr><td>Destacar tendencias y lo que se hará para mejorar</td><td>Culpar a otros o atacar los datos</td></tr>
+    </table></div>
+    <h3>Cultura organizacional</h3>
+    <p>Con alta <b>distancia de poder</b> (Hofstede), quienes tienen poder deciden sin consultar, quienes tienen menos poder delegan la responsabilidad y el desacuerdo se interpreta como desafío. Con alta <b>evitación de la incertidumbre</b> se actúa de forma reactiva y dogmática, el miedo a la mala publicidad pesa más que el brote, hay menos transparencia y la burocracia frena las intervenciones. Tenga esto en cuenta al asesorar en países de la Región.</p>
+    <p><b>Ventaja</b>: un brote concentra la atención sobre la RAM y la PCI. Comunique pronto las causas raíz y vincule procesos con resultados, porque la atención dura poco.</p>
+  </details>
+
+  <details><summary>21. Herramienta ICAR del CDC <span class="en">Infection Control Assessment and Response</span></summary>
+    <p class="en">Fuente: CDC, ICAR Tool for General IPC Across Settings (página actualizada en junio de 2026; módulos con fecha del 11/2022), cdc.gov/healthcare-associated-infections/php/toolkit/icar.html</p>
+    <ul>
+      <li><b>Qué es</b>: una herramienta para evaluar sistemáticamente las prácticas de PCI de un establecimiento y orientar la mejora cerrando las brechas encontradas. La usan departamentos de salud y establecimientos en <b>atención aguda, larga estancia y atención ambulatoria</b>. <b>No</b> se usa en hemodiálisis ambulatoria, que tiene herramientas propias. Hay un <b>suplemento para UCIN</b>.</li>
+      <li><b>4 pasos</b>: (1) programar con el establecimiento, (2) realizar la evaluación, (3) dar <b>retroalimentación verbal y escrita</b>, (4) hacer seguimiento de la implementación.</li>
+      <li><b>3 secciones</b>: (1) datos demográficos e infraestructura, que llena el establecimiento antes; (2) módulos de la guía del facilitador, con preguntas cerradas o abiertas acompañadas de la <b>práctica recomendada</b> para dar retroalimentación inmediata; (3) formularios de observación directa.</li>
+      <li><b>Equivalente OMS</b>: el IPCAF (autoevaluación por puntaje). El ICAR es una evaluación externa guiada, con entrevista más observación. En una misión de la OPS se pueden combinar: IPCAF para la línea de base y observación al estilo ICAR para encontrar las causas.</li>
+      <li>Consejos: estudiar las prácticas recomendadas antes de la visita, conocer la normativa local, priorizar según los datos demográficos y las preocupaciones del establecimiento, acordar los horarios de observación, trabajar en equipo en hospitales grandes o repartir la visita en 2 días. Las observaciones de EPP deben ser <b>encubiertas</b> y, en general, de ≥3 habitaciones o personas.</li>
+    </ul>
+    <h3>Los 11 módulos y sus puntos clave</h3>
+    <div class="tbl"><table>
+      <tr><th>Módulo</th><th>Prácticas recomendadas evaluables</th></tr>
+      <tr><td>1. Capacitación, auditoría y retroalimentación</td><td>Formación específica del puesto <b>al ingreso, al menos una vez al año</b> y ante nuevos productos o procesos, fallas o brotes. Competencia = prueba de conocimientos más <b>observación directa</b>. Registros de formación. Auditoría con herramientas estandarizadas: el CDC no fija un número de observaciones, pero las muestras pequeñas sesgan; hay de 30 a 179 oportunidades de higiene de manos por paciente-día en hospitalización. Limpieza: línea de base en el 10–15 % de las habitaciones en hospitales de ≥150 camas, que baja al 5 % si la minuciosidad supera el 80 %; mínimo 15 habitaciones en hospitales de &lt;150 camas. Retroalimentación pronta y regular al personal y a la dirección; la retroalimentación verbal inmediata no reemplaza la mejora dirigida.</td></tr>
+      <tr><td>2. Higiene de manos</td><td>Solución alcohólica con <b>60–95 % de alcohol</b>, en el punto de atención. Agua y jabón si las manos están visiblemente sucias, antes de comer, después de ir al baño y con <i>C. difficile</i> o norovirus. <b>No rellenar</b> dispensadores de jabón parcialmente vacíos (contaminación). Lavamanos solo para lavarse las manos. Uñas naturales de menos de ¼ de pulgada y sin uñas artificiales con pacientes de alto riesgo. Lociones compatibles. Educar a pacientes y visitas. Evaluar ≥3 dispensadores y ≥3 lavamanos.</td></tr>
+      <tr><td>3. Precauciones basadas en la transmisión</td><td>Se aplican de forma <b>empírica por síndrome</b>, sin esperar resultados. Rótulo con el tipo de precaución y el EPP; los rótulos genéricos del tipo "consulte con enfermería" no sirven, y el rótulo se deja hasta la limpieza terminal. EPP disponible antes de entrar y equipos dedicados (o desinfectados tras cada uso). Separación de ≥3 pies (~1 m) entre camas. Aislamiento aéreo con ≥6 o ≥12 ACH, presión diaria y respiradores con evaluación médica y <b>prueba de ajuste</b>. Para suspender las precauciones de contacto por MDRO en hospitales de agudos: <b>≥6 meses</b> desde el último cultivo positivo y <b>≥2 tamizajes negativos consecutivos con ≥1 semana de diferencia</b>, decidiendo caso a caso. Comunicación del estado infeccioso <b>en los traslados</b> entre establecimientos. En hogares de ancianos, <b>precauciones de barrera reforzadas</b> <span class="en">Enhanced Barrier Precautions</span>: bata y guantes en actividades de alto contacto para residentes con heridas o dispositivos invasivos, o con infección o colonización por MDRO, cuando no corresponden precauciones de contacto; no exigen habitación individual ni restringen las actividades del residente.</td></tr>
+      <tr><td>4. Servicios ambientales (limpieza)</td><td>Habitaciones: cuando están sucias, a diario y al alta (terminal); áreas de procedimientos invasivos, después de cada procedimiento. De arriba hacia abajo y de lo limpio a lo sucio (el baño al final). Los derrames se limpian de inmediato. Desinfectante registrado, respetando el <b>tiempo de contacto húmedo</b>. Producto esporicida (<b>Lista K</b> de la EPA) para <i>C. difficile</i> y producto con eficacia contra <i>C. auris</i> (<b>Lista P</b>). Solo personal formado diluye productos; recipientes rotulados con fecha de vencimiento y sin rellenar. El carro no entra en la habitación (menos aún con precauciones) y se limpia en cada turno. Paños y mopas de microfibra nuevos para cada habitación. Tiempo mínimo definido por habitación. Monitoreo de la minuciosidad con marcador fluorescente u observación.</td></tr>
+      <tr><td>5. Desinfección de alto nivel y esterilización</td><td>Clasificación de Spaulding. Limpieza previa obligatoria (manual o mecánica), abriendo las pinzas y desarmando los equipos. Área de reprocesamiento separada de la de pacientes, con lavamanos aparte. <b>Prueba de fugas</b> de los endoscopios flexibles en cada ciclo. Concentración mínima efectiva <span class="en">MEC</span> del desinfectante de alto nivel verificada al menos cada día de uso, y no usarlo más allá de su vida útil (por ejemplo, <b>14 días el OPA</b>). Esterilización: indicadores <b>mecánicos y químicos en cada carga</b>; indicador <b>biológico al menos semanal</b> por esterilizador y <b>en cada carga con implantes</b>, en cuarentena hasta resultado negativo; prueba de <b>Bowie-Dick diaria</b> en esterilizadores de prevacío. La esterilización de uso inmediato (<i>flash</i>) no se usa por conveniencia y el material se usa enseguida, sin almacenarlo. Los dispositivos de un solo uso solo se reutilizan con un reprocesador registrado ante la FDA. Plan de respuesta ante fallas: equipo multidisciplinario, evaluación de riesgo, decisión de <b>notificar a los pacientes</b> con salud pública y reporte al fabricante. Los equipos prestados se inspeccionan antes de usarlos.</td></tr>
+      <tr><td>6. Seguridad de las inyecciones</td><td><b>Una aguja, una jeringa, un solo uso</b>, también para entrar a un vial del mismo paciente. Preparación aséptica en un área limpia, alejada de lavamanos (el agua salpica más de 1 m) y de material usado. Desinfectar el tapón con alcohol. Vial monodosis para un solo paciente y un solo procedimiento. Vial multidosis <b>fechado al abrirlo y desechado a los 28 días</b>, salvo otra indicación del fabricante; dedicado a un paciente cuando sea posible y siempre si entra al área inmediata de atención. Mascarilla para punción lumbar y procedimientos intratecales o epidurales. Contenedores de cortopunzantes que no estén llenos. Composición estéril según USP 797. Las fallas causaron brotes de VHC y VHB.</td></tr>
+      <tr><td>7. Pruebas de sangre en el punto de atención</td><td>Dispositivos de punción digital <b>desechables y autodesactivables</b> cuando el personal toma la muestra. Los reutilizables (tipo lapicero) son solo para el automonitoreo de una persona y <b>nunca se comparten, ni siquiera cambiando la lanceta</b>. Glucómetro asignado a cada paciente; si se comparte, se limpia y desinfecta tras cada uso según el fabricante, y si el fabricante no indica cómo, no se comparte. El etanol al 70 % no es eficaz contra los virus de transmisión sanguínea. Los brotes de VHB en residencias se deben a estas fallas.</td></tr>
+      <tr><td>8. Cuidado de heridas</td><td>El carro de curaciones no entra en la habitación. Los insumos que entran se quedan para ese paciente o se desechan, sin devolverlos al depósito limpio. Equipo reutilizable limpio y desinfectado tras cada uso, y las tijeras no se llevan en el bolsillo. Cremas y ungüentos multidosis dedicados o fraccionados antes del procedimiento. Guantes siempre; bata si hay contacto significativo o salpicaduras; protección facial en irrigación, lavado pulsátil o manejo de terapia de presión negativa (VAC). Separar lo limpio de lo sucio.</td></tr>
+      <tr><td>9. Lavandería hospitalaria</td><td>La ropa sucia se embolsa en el punto de uso, sin sacudirla. Área sucia a <b>presión negativa</b> (≥2 ACH de aire exterior y 10 ACH totales) y área limpia a <b>presión positiva</b>. Ropa limpia protegida durante el transporte y en carros cubiertos y limpios. EPP impermeable y resistente a pinchazos para quien clasifica. Supervisión de los servicios contratados. Higiene de manos disponible.</td></tr>
+      <tr><td>10. Optimización de antibióticos</td><td><b>Elementos básicos del CDC</b> para hospitales: compromiso de la dirección, rendición de cuentas, experticia farmacéutica, acción, seguimiento, reporte y educación. Recomendaciones institucionales de tratamiento basadas en guías y en la sensibilidad local; <b>revisión a las 48–72 h</b> <span class="en">time-out</span>; informes por servicio. La educación interactiva presencial es la que tiene más evidencia para mejorar la prescripción.</td></tr>
+      <tr><td>11. Exposición al agua</td><td><b>Programa de gestión del agua</b> para <i>Legionella</i> y otros patógenos de origen hídrico. Lavamanos: el grifo no descarga directamente sobre el desagüe, la descarga está a ≥10 pulgadas del fondo, los insumos quedan a <b>≥3 pies (~1 m)</b> o detrás de una barrera contra salpicaduras (desinfectada a diario) y se toman medidas contra la biopelícula de los desagües, que alojan EPC y otros MDRO. Inodoros y vertederos con tapa cerrada al descargar. Máquinas y depósitos de hielo limpios y de acceso limitado. Diagnóstico de <i>Legionella</i>: cultivo respiratorio inferior más antígeno urinario. <b>Investigación completa</b> ante <b>1 caso presuntivo</b> de legionelosis asociada a la atención o <b>2 casos posibles en 12 meses</b>. Mantenimiento de las duchas lavaojos.</td></tr>
+      <tr><td>Suplemento UCIN</td><td>Los brotes en UCIN suelen deberse a fallas básicas (higiene de manos, limpieza). Patógenos típicos: <i>S. aureus</i> (MSSA y MRSA), <i>S. epidermidis</i>, <i>Serratia marcescens</i>, <i>Klebsiella</i>, <i>Enterobacter</i>, <i>P. aeruginosa</i>, <i>A. baumannii</i> y virus respiratorios y entéricos. Reservorios: <b>incubadoras</b> (contaminación persistente pese a la desinfección), agua, leche humana y equipos de extracción. No usar fenoles en incubadoras ocupadas (hiperbilirrubinemia). Restricción temporal de visitas en temporada de virus respiratorios o en un brote. Tamizaje de los neonatos referidos de otros centros si hay vigilancia activa de <i>S. aureus</i>. Educar a las familias en higiene de manos.</td></tr>
+    </table></div>
+  </details>
+
+  <h3>Documentos para hojear si queda tiempo</h3>
+  <ul>
+    <li><a href="https://www.who.int/publications/i/item/9789241549929" target="_blank" rel="noopener">OMS — Guidelines on core components of IPC programmes (2016)</a></li>
+    <li><a href="https://www.who.int/publications/i/item/9789241516945" target="_blank" rel="noopener">OMS — Minimum requirements for IPC programmes (2019)</a></li>
+    <li><a href="https://www.who.int/publications/i/item/9789241550178" target="_blank" rel="noopener">OMS — Guidelines for CRE, CRAB y CRPA (2017)</a></li>
+    <li><a href="https://www.who.int/publications/i/item/9789241580496" target="_blank" rel="noopener">OMS — Reglamento Sanitario Internacional (2005)</a></li>
+    <li><a href="https://www.paho.org/es/temas/prevencion-control-infecciones" target="_blank" rel="noopener">OPS — Prevención y control de infecciones</a></li>
+  </ul>
+  <h3>PROA: documentos OMS y OPS</h3>
+  <ul>
+    <li><a href="https://www.who.int/publications/i/item/9789241515481" target="_blank" rel="noopener">OMS — Antimicrobial stewardship programmes in health-care facilities in LMICs: a WHO practical toolkit (2019)</a></li>
+    <li><a href="https://iris.who.int/server/api/core/bitstreams/bfc17315-e20c-4e61-8e08-c70d8a349437/content" target="_blank" rel="noopener">OMS — Policy guidance on integrated antimicrobial stewardship activities (2021, PDF)</a></li>
+    <li><a href="https://www.who.int/publications/i/item/9789240062382" target="_blank" rel="noopener">OMS — The WHO AWaRe antibiotic book (2022)</a></li>
+    <li><a href="https://iris.paho.org/server/api/core/bitstreams/4d450e5b-a0d8-44c2-ab0c-99a765044186/content" target="_blank" rel="noopener">OPS — Tratamiento de las enfermedades infecciosas 2024–2026, 9.ª ed. (PDF; capítulo 4 sobre PROA)</a></li>
+    <li><a href="https://www.paho.org/es/noticias/17-11-2021-es-fundamental-implementacion-programas-optimizacion-antimicrobianos-proa" target="_blank" rel="noopener">OPS — Es fundamental la implementación de PROA (2021)</a></li>
+    <li><a href="https://campus.paho.org/es/curso/curso-proa" target="_blank" rel="noopener">OPS, Campus Virtual de Salud Pública — Curso para la implementación de PROA</a></li>
+  </ul>
+  <h3>Vigilancia, brotes de IAAS y evaluación de PCI</h3>
+  <ul>
+    <li><a href="https://www.who.int/publications/i/item/9789240101456" target="_blank" rel="noopener">OMS — Surveillance of HAI at national and facility levels: practical handbook (2024)</a> · copia local: <code>9789240101456-eng.pdf</code></li>
+    <li>ECDC — Curso "Investigation and control of outbreaks of HAI" (2023), 6 presentaciones en la carpeta: principios de investigación, estudios descriptivos, reservorios y transmisión, vigilancia manual y automatizada (partes 1 y 2) y comunicación.</li>
+    <li><a href="https://www.cdc.gov/healthcare-associated-infections/php/toolkit/icar.html" target="_blank" rel="noopener">CDC — ICAR Tool for General IPC Across Settings</a> (11 módulos, formularios de observación y suplemento UCIN)</li>
+    <li><a href="https://www.cdc.gov/healthcare-associated-infections/php/toolkit/outbreak-investigations-toolkit.html" target="_blank" rel="noopener">CDC — HAI Outbreak Investigation Toolkit</a></li>
+    <li><a href="https://www.cdc.gov/antibiotic-use/hcp/core-elements/hospital.html" target="_blank" rel="noopener">CDC — Core Elements of Hospital Antibiotic Stewardship Programs</a></li>
+    <li><a href="https://www.who.int/teams/integrated-health-services/infection-prevention-control" target="_blank" rel="noopener">OMS — PCI: estrategia mundial (WHA76) y plan de acción y marco de monitoreo 2024–2030 (WHA77)</a></li>
+    <li><a href="https://www.who.int/publications/i/item/B09330" target="_blank" rel="noopener">OMS — The case for investment and action in IPC</a></li>
+  </ul>
+</section>
+
+<!-- ============ EXAMEN ============ -->
+<section id="examen" role="tabpanel" hidden>
+  <h2>Examen cronometrado</h2>
+  <p>Simula la prueba: preguntas aleatorias de todos los temas, sin ver la respuesta hasta el final, con cuenta regresiva. Para reproducir los 120 minutos completos, haga el examen de 60 preguntas (75 min) y luego un caso escrito de la pestaña "Casos escritos" con 45 minutos.</p>
+  <div id="exSetup" class="card">
+    <div class="qbar" style="margin:0">
+      <label for="exN" class="en">Preguntas</label>
+      <select id="exN"><option value="20">20 · 25 min</option><option value="40">40 · 50 min</option><option value="60" selected>60 · 75 min</option><option value="90">90 · 112 min</option></select>
+      <button class="btn primary" id="exStart">Iniciar examen</button>
+    </div>
+    <p class="hist" id="exHist"></p>
+  </div>
+  <div id="exRun" hidden>
+    <div class="exbar"><span class="tag" id="exPos"></span><span class="timer" id="exTimer"></span><button class="btn" id="exEnd">Terminar y corregir</button></div>
+    <div class="card" id="exCard"></div>
+    <div class="dots" id="exDots"></div>
+  </div>
+  <div id="exResult" hidden></div>
+</section>
+
+<!-- ============ QUIZ ============ -->
+<section id="quiz" role="tabpanel" hidden>
+  <h2>Simulacro</h2>
+  <p>Responda, lea la explicación y siga. El marcador por tema le dice dónde invertir las horas que quedan.</p>
+  <div class="qbar">
+    <label for="topicSel" class="en">Tema</label>
+    <select id="topicSel"></select>
+    <button class="btn" id="shuffleBtn">Mezclar</button>
+    <button class="btn" id="wrongBtn">Solo las falladas</button>
+    <button class="btn" id="resetBtn">Reiniciar respuestas</button>
+  </div>
+  <div class="card" id="qcard"></div>
+  <div class="score" id="score"></div>
+</section>
+
+<!-- ============ CASOS ============ -->
+<section id="casos" role="tabpanel" hidden>
+  <h2>Casos para redactar</h2>
+  <p>Las pruebas de la OPS para consultores suelen incluir una o dos preguntas abiertas. Practique con el cronómetro: 20 minutos por caso, por escrito, y después compare con la guía de respuesta.</p>
+  <div class="qbar"><button class="btn primary" id="timerBtn">Iniciar 20:00</button><span class="timer" id="timer">20:00</span></div>
+  <div id="caseList"></div>
+</section>
+
+<!-- ============ CIFRAS ============ -->
+<section id="cifras" role="tabpanel" hidden>
+  <h2>Cifras clave</h2>
+  <p>Lo que conviene llevar memorizado. Verifique en la fuente cualquier cifra que vaya a citar textualmente.</p>
+  <div class="tbl"><table>
+    <tr><th>Dato</th><th>Valor</th><th>Fuente</th></tr>
+    <tr><td>Pacientes con al menos una IAAS en hospitales de agudos</td><td class="num">7/100 (ingresos altos) · 15/100 (ingresos bajos y medios)</td><td>OMS, Informe mundial PCI 2022</td></tr>
+    <tr><td>Pacientes con IAAS que mueren</td><td class="num">~1 de cada 10</td><td>OMS 2022</td></tr>
+    <tr><td>Reducción de IAAS con buenos programas de PCI</td><td class="num">≥35–70 %</td><td>OMS 2022</td></tr>
+    <tr><td>Muertes atribuibles a RAM bacteriana (2021)</td><td class="num">1.14 millones · 4.71 millones asociadas</td><td>GRAM, Lancet 2024</td></tr>
+    <tr><td>Proyección 2050</td><td class="num">1.91 millones atribuibles/año · 39 millones acumuladas 2025–2050</td><td>GRAM, Lancet 2024</td></tr>
+    <tr><td>Meta ONU de reducción de muertes por RAM</td><td class="num">−10 % para 2030</td><td>UNGA 2024</td></tr>
+    <tr><td>Meta de antibióticos Access</td><td class="num">≥70 % del consumo humano</td><td>UNGA 2024 (antes 60 %, OMS 2019)</td></tr>
+    <tr><td>Fricción con alcohol / lavado</td><td class="num">20–30 s / 40–60 s</td><td>OMS higiene de manos</td></tr>
+    <tr><td>Separación entre camas</td><td class="num">≥1 m</td><td>Componente 7 OMS</td></tr>
+    <tr><td>Ventilación natural, aislamiento aéreo</td><td class="num">160 L/s/paciente</td><td>OMS 2009</td></tr>
+    <tr><td>Ventilación mecánica, aislamiento aéreo</td><td class="num">≥12 ACH, presión negativa</td><td>OMS/CDC</td></tr>
+    <tr><td>Notificación RSI</td><td class="num">24 h tras evaluación</td><td>RSI art. 6</td></tr>
+    <tr><td>Criterios Anexo 2</td><td class="num">2 de 4</td><td>RSI</td></tr>
+    <tr><td>Fin de brote de ébola</td><td class="num">42 días sin casos</td><td>OMS</td></tr>
+    <tr><td>PEP VIH tras pinchazo</td><td class="num">ideal ≤2 h, máximo 72 h</td><td>OMS</td></tr>
+    <tr><td>IPCAF intermedio</td><td class="num">401–600 / 800</td><td>OMS 2018</td></tr>
+    <tr><td>Meta 7-1-7</td><td class="num">detectar 7 d · notificar 1 d · responder 7 d</td><td>Resolve to Save Lives</td></tr>
+    <tr><td>Países y hospitales terciarios/secundarios con vigilancia de IAAS y RAM</td><td class="num">30 % 2026 · 50 % 2028 · &gt;80 % 2030</td><td>Marco de monitoreo PCI OMS 2024–2030</td></tr>
+    <tr><td>Prevalencia combinada de IAAS, Región de las Américas</td><td class="num">9.6 % (África 27 %, UE/EEE 8.0 %, EE. UU. 3.2 %)</td><td>Manual OMS vigilancia 2024</td></tr>
+    <tr><td>IAAS en UCI</td><td class="num">hasta 30 % de los pacientes</td><td>OMS 2024</td></tr>
+    <tr><td>Sepsis hospitalaria que es IAAS / sepsis con disfunción orgánica en UCI adquirida en el hospital</td><td class="num">23.6 % / 48.7 %</td><td>OMS 2024</td></tr>
+    <tr><td>Puntaje de vigilancia IPCAF (mediana)</td><td class="num">12.5/100 ingresos bajos · 85/100 altos</td><td>Encuesta OMS 2019</td></tr>
+    <tr><td>Asociación a dispositivo (definiciones OMS 2024)</td><td class="num">dispositivo colocado ≥2 días antes</td><td>Anexo 1</td></tr>
+    <tr><td>Ventana de vigilancia de ISQ</td><td class="num">30 días tras la cirugía</td><td>OMS 2024</td></tr>
+    <tr><td>Validación de las definiciones OMS (IAAS)</td><td class="num">17.9 % OMS vs 11.7 % ECDC · 5557 pacientes</td><td>OMS 2024</td></tr>
+    <tr><td>Prevalencia IAAS Europa (PPS 2016–17)</td><td class="num">5.9 % (2.9–10 %)</td><td>ECDC</td></tr>
+    <tr><td>Brote de UCIN de Bremen</td><td class="num">37 lactantes · 10 ITS · 7 muertes</td><td>Haller, BMJ Open 2015</td></tr>
+    <tr><td>Concentración de alcohol en solución de manos</td><td class="num">60–95 %</td><td>CDC ICAR mód. 2</td></tr>
+    <tr><td>Recambios de aire en aislamiento aéreo (CDC)</td><td class="num">≥6 existentes · ≥12 nuevos</td><td>CDC ICAR mód. 3</td></tr>
+    <tr><td>Consultorio tras paciente aéreo sin AIIR</td><td class="num">~1 h vacío</td><td>CDC</td></tr>
+    <tr><td>Suspender precauciones de contacto por MDRO</td><td class="num">≥6 meses + ≥2 tamizajes negativos a ≥1 semana</td><td>CDC ICAR mód. 3</td></tr>
+    <tr><td>Indicador biológico de esterilización</td><td class="num">≥ semanal y en cada carga con implantes</td><td>CDC ICAR mód. 5</td></tr>
+    <tr><td>Prueba de Bowie-Dick</td><td class="num">diaria (prevacío)</td><td>CDC ICAR mód. 5</td></tr>
+    <tr><td>Vial multidosis abierto</td><td class="num">desechar a los 28 días (salvo fabricante)</td><td>USP 797 / CDC</td></tr>
+    <tr><td>Investigación completa por <i>Legionella</i></td><td class="num">1 caso presuntivo · o 2 posibles en 12 meses</td><td>CDC ICAR mód. 11</td></tr>
+    <tr><td>Distancia de insumos al lavamanos</td><td class="num">≥3 pies (~1 m) o barrera</td><td>CDC ICAR mód. 11</td></tr>
+    <tr><td>Revisión de antibióticos</td><td class="num">48–72 h</td><td>CDC Core Elements / OMS</td></tr>
+  </table></div>
+</section>
+</div>
+
+<script>
+(function(){
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- tabs ---------- */
+const tabs=[...document.querySelectorAll('#tabs button')];
+function show(id){tabs.forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===id));document.querySelectorAll('[role=tabpanel]').forEach(s=>s.hidden=s.id!==id);store.set('tab',id)}
+tabs.forEach(b=>b.addEventListener('click',()=>show(b.dataset.tab)));
+const h=location.hash.replace('#','');show(['plan','repaso','quiz','examen','casos','cifras'].includes(h)?h:store.get('tab','plan'));
+
+/* ---------- plan ---------- */
+const plan=[
+ ['H 0–1','Diagnóstico','Examen cronometrado de 20 preguntas sin estudiar. Anote los temas con menos del 60 %.'],
+ ['H 1–3','Programa de PCI e higiene','Módulos 1 y 2: 8 componentes, estrategia multimodal, requisitos mínimos, IPCAF/HHSAF, 5 momentos. Simulacro de "Programa PCI" e "Higiene y precauciones estándar".'],
+ ['H 3–5','Precauciones, ambiente e ICAR','Módulos 3, 4 y 21: EPP y secuencias, ventilación (OMS vs. CDC), Spaulding, cloro y los 11 módulos ICAR con sus cifras. Simulacro de "Transmisión y EPP", "Ambiente" e "ICAR CDC".'],
+ ['H 5–5:30','Pausa','Camine, coma algo. Sin pantallas.',1],
+ ['H 5:30–8','Vigilancia y brotes de IAAS','Módulos 5, 17, 18 y 19: manual OMS 2024 (metas 30/50/80, métodos, cálculos, definiciones simplificadas), 12 pasos ECDC, seudobrotes, muestreo ambiental, WGS, Bremen. Simulacro de "Vigilancia IAAS", "Investigación de brotes IAAS" y "Brotes y epidemiología".'],
+ ['H 8–10','RSI, respuesta y patógenos','Módulos 6, 7, 11 y 12: Anexo 2, enmiendas 2024, HEPR, IMS, grados; ébola, cólera, sarampión, mpox, H5N1, C. auris/EPC; EMT y alistamiento.'],
+ ['H 10–11','Comunicación, RAM y PROA','Módulos 13 y 20 (los 8 pasos del mensaje y los 4 factores de credibilidad) y lectura rápida de los módulos 8, 9, 10 y 14.'],
+ ['H 11–18','Dormir','Siete horas. El sueño consolida lo estudiado; no lo recorte.',1],
+ ['H 18–20','Examen 120 min completo','Examen de 60 preguntas (75 min) más un caso escrito (45 min) en la pestaña de casos. Es un ensayo general de la prueba.'],
+ ['H 20–21:30','Corregir brechas','Revise los errores del examen, luego "Solo las falladas" en el simulacro hasta dejarlas en cero. Un segundo caso escrito de 20 min.'],
+ ['H 21:30–22:30','Cifras clave','Lea la tabla dos veces en voz alta. Repase los módulos 15 y 16 (contexto de la OPS y rol del consultor).'],
+ ['H 22:30–24','Preparación','Revise conexión, documento de identidad, plataforma. Descanse antes de empezar.',1]
+];
+const done=store.get('plan',{});
+const pl=document.getElementById('planList');
+plan.forEach((p,i)=>{
+  const d=document.createElement('div');d.className='slot'+(p[3]?' rest':'')+(done[i]?' done':'');
+  d.innerHTML=`<div class="h">${p[0]}</div><label><input type="checkbox" id="plan${i}" ${done[i]?'checked':''}><span><span class="t">${p[1]}</span><br><span class="d">${p[2]}</span></span></label>`;
+  d.querySelector('input').addEventListener('change',e=>{done[i]=e.target.checked;d.classList.toggle('done',e.target.checked);store.set('plan',done)});
+  pl.appendChild(d);
+});
+
+/* ---------- quiz ---------- */
+const T={P:'Programa PCI',H:'Higiene y precauciones estándar',X:'Transmisión y EPP',A:'Ambiente y reprocesamiento',B:'Brotes y epidemiología',R:'RSI y respuesta',G:'PCI por patógeno',M:'RAM y PCI',D:'Dispositivos y cirugía',E:'Preparación y operaciones',O:'Contexto OPS',V:'Vigilancia IAAS (OMS 2024)',I:'Investigación de brotes IAAS (ECDC)',C:'Comunicación de brotes',K:'ICAR CDC'};
+const Q=[
+['P','¿Cuál NO es uno de los 8 componentes básicos de PCI de la OMS?',['Vigilancia de IAAS','Carga de trabajo, dotación y ocupación de camas','Programa de optimización de antimicrobianos','Entorno construido, materiales y equipos'],2,'El PROA es aliado estrecho, pero los 8 componentes son: programas, directrices, educación, vigilancia IAAS, estrategias multimodales, monitoreo/auditoría/retroalimentación, carga de trabajo/dotación/camas, y entorno construido.'],
+['P','La estrategia multimodal de la OMS incluye cinco elementos. ¿Cuál de estos NO es uno de ellos?',['Cambio de sistema (build it)','Recordatorios y comunicación (sell it)','Cultura de seguridad (live it)','Sanciones disciplinarias (enforce it)'],3,'Los cinco son: cambio de sistema, formación, monitoreo y retroalimentación, recordatorios y comunicación, y cultura de seguridad institucional.'],
+['P','Un hospital obtiene 520 puntos en el IPCAF. ¿Cómo se clasifica?',['Inadecuado','Básico','Intermedio','Avanzado'],2,'IPCAF: 0–200 inadecuado, 201–400 básico, 401–600 intermedio, 601–800 avanzado.'],
+['P','¿Para qué fueron diseñados los requisitos mínimos de PCI (OMS 2019)?',['Para reemplazar los componentes básicos en hospitales de alta complejidad','Como punto de partida que todo país y establecimiento debe tener antes de avanzar a la implementación completa de los componentes básicos','Para certificar hospitales ante la OPS','Solo para emergencias humanitarias'],1,'Son el "piso" de protección mínima, útiles en contextos de recursos limitados y emergencias, y un paso hacia los componentes básicos completos.'],
+['P','¿Qué herramienta evalúa agua, saneamiento, higiene, residuos y limpieza en establecimientos de salud?',['IPCAT2','WASH FIT','HHSAF','JEE'],1,'WASH FIT (Water and Sanitation for Health Facility Improvement Tool) es la herramienta OMS/UNICEF de mejora continua de WASH en establecimientos.'],
+['P','La Estrategia mundial de PCI fue adoptada en la WHA76 (2023). ¿Qué la acompaña desde la WHA77 (2024)?',['Un tratado vinculante de PCI','Un plan de acción y marco de monitoreo mundial de PCI 2024–2030','La lista de patógenos prioritarios','El reglamento de ventilación hospitalaria'],1,'El plan de acción y marco de monitoreo 2024–2030 operacionaliza la estrategia con metas e indicadores.'],
+['H','Una enfermera ajusta la bomba de infusión de un paciente sin tocarlo y sale de la habitación. ¿Qué momento de higiene de manos aplica?',['Momento 2','Momento 3','Momento 4','Momento 5'],3,'Momento 5: después de tocar el entorno del paciente, aunque no haya tocado al paciente.'],
+['H','¿Cuánto debe durar la fricción de manos con solución alcohólica?',['5–10 s','20–30 s','40–60 s','2 minutos'],1,'Fricción con alcohol 20–30 s; lavado con agua y jabón 40–60 s.'],
+['H','En un brote de C. difficile, la higiene de manos preferida tras atender al paciente es:',['Solución alcohólica al 70 %','Agua y jabón','Clorhexidina al 4 % sin agua','Guantes dobles sin higiene de manos'],1,'Las esporas de C. difficile resisten el alcohol; la acción mecánica de agua y jabón las remueve.'],
+['H','Sobre el uso de guantes, ¿cuál afirmación es correcta?',['Si se usan guantes, no se necesita higiene de manos','Se hace higiene de manos antes de ponerlos y al retirarlos','Se pueden usar los mismos guantes entre pacientes si no hay sangre visible','El alcohol puede aplicarse sobre los guantes para reutilizarlos'],1,'Los guantes no sustituyen la higiene de manos. No se reutilizan ni se descontaminan con alcohol para pasar entre pacientes.'],
+['H','Tras un pinchazo con aguja de un paciente con VIH, la profilaxis postexposición debe iniciarse:',['Solo si la serología basal del trabajador es positiva','Lo antes posible, idealmente en 2 horas y no después de 72 horas','Entre 5 y 7 días después','Solo si el paciente tiene carga viral detectable'],1,'PEP lo antes posible; la eficacia disminuye con el tiempo y no se recomienda después de 72 h.'],
+['H','¿Cuál NO forma parte de las precauciones estándar?',['Higiene respiratoria y etiqueta de la tos','Prácticas de inyección segura','Respirador N95 para todos los pacientes','Manejo seguro de residuos'],2,'El respirador corresponde a precauciones aéreas o a procedimientos generadores de aerosoles, según evaluación de riesgo, no a todos los pacientes.'],
+['X','Un niño con sospecha de sarampión llega a urgencias. ¿Qué medida es la más adecuada?',['Mascarilla médica al personal y sala general','Aislamiento aéreo, respirador N95, y que lo atienda solo personal con inmunidad documentada','Precauciones de contacto únicamente','Mantenerlo en la sala de espera con mascarilla hasta tener la IgM'],1,'Sarampión es de transmisión aérea; aislar de inmediato y priorizar personal inmune. La espera en sala común genera casos secundarios.'],
+['X','Según la secuencia de CDC, ¿qué elemento del EPP se retira primero?',['Respirador','Bata','Guantes (o bata y guantes juntos)','Protección ocular'],2,'Retiro: guantes → protección ocular → bata → respirador fuera de la habitación → higiene de manos. Alternativa válida: bata y guantes juntos.'],
+['X','¿Qué recomienda la OMS como EPP para el personal que atiende a un paciente con mpox?',['Solo guantes','Mascarilla médica y guantes','Bata, guantes, protección ocular y respirador','Overol completo con capucha'],2,'La guía OMS de PCI para mpox recomienda bata, guantes, protección ocular y respirador (N95/FFP2).'],
+['X','Para un caso sospechoso de influenza aviar A(H5N1), las precauciones son:',['Solo gotas','Contacto y gotas','Contacto, aéreas y protección ocular','Estándar únicamente'],2,'Para influenza con potencial pandémico o nuevo subtipo se aplican precauciones de contacto, aéreas y protección ocular.'],
+['X','¿Cuál es la ventilación natural mínima recomendada por la OMS para una sala de aislamiento aéreo?',['12 L/s por paciente','60 L/s por paciente','160 L/s por paciente','6 recambios por hora'],2,'160 L/s/paciente para precauciones aéreas; 60 L/s en salas generales. Con ventilación mecánica, ≥12 ACH.'],
+['X','La verificación de sello del respirador (seal check):',['Se hace una vez al año','Reemplaza la prueba de ajuste','Se hace cada vez que se coloca el respirador','Solo aplica a respiradores con válvula'],2,'La prueba de ajuste (fit test) es periódica; la verificación de sello se hace cada vez.'],
+['X','En la jerarquía de controles, ¿qué nivel ocupa el EPP?',['El primero y más eficaz','El de controles de ingeniería','El último, después de ingeniería y administrativos','Es equivalente a los controles administrativos'],2,'Eliminación → ingeniería → administrativos → EPP. El EPP protege solo a quien lo usa y depende de su correcto uso.'],
+['A','Un endoscopio digestivo es un dispositivo:',['Crítico, requiere esterilización','Semicrítico, requiere al menos desinfección de alto nivel','No crítico, basta limpieza','No clasificable por Spaulding'],1,'Contacto con mucosas: semicrítico. Mínimo desinfección de alto nivel (aunque se prefiere esterilización cuando es posible).'],
+['A','¿Qué concentración de cloro se usa para derrames grandes de sangre en un centro de tratamiento de ébola?',['0.05 %','0.1 %','0.5 %','5 %'],2,'0.5 % (5000 ppm) para derrames y superficies contaminadas en contexto de FHV; 0.05 % para manos/piel cuando no hay alternativa.'],
+['A','En un brote por C. auris, ¿qué desinfectante es insuficiente por sí solo?',['Hipoclorito de sodio','Peróxido de hidrógeno','Amonio cuaternario','Ácido peracético'],2,'C. auris tolera muchos amonios cuaternarios. Se usan productos con eficacia demostrada (cloro, peróxido de hidrógeno, esporicidas).'],
+['A','El orden correcto en la limpieza ambiental es:',['De lo sucio a lo limpio y de abajo hacia arriba','De lo limpio a lo sucio y de arriba hacia abajo','Desinfectar primero, limpiar después','Cualquier orden si se usa cloro'],1,'Limpiar antes de desinfectar; avanzar de lo limpio a lo sucio y de arriba hacia abajo para no recontaminar.'],
+['B','En la investigación de un brote, ¿qué paso viene antes de construir la definición de caso?',['Probar hipótesis con un estudio de casos y controles','Confirmar la existencia del brote y verificar el diagnóstico','Publicar el informe final','Cerrar el brote'],1,'Primero se confirma que hay un exceso real (no un artefacto) y se verifica el diagnóstico por laboratorio.'],
+['B','Al inicio de un brote, la definición de caso debe ser:',['Muy específica, solo confirmados','Amplia y sensible, para no perder casos','Igual a la definición de vigilancia rutinaria','Solo clínica, sin criterio de tiempo ni lugar'],1,'Sensible al inicio para captar todos los posibles casos; se hace más específica a medida que se confirma la etiología.'],
+['B','Una curva epidémica muestra varios picos sucesivos separados por un intervalo similar al período de incubación. Sugiere:',['Fuente común puntual','Fuente común continua','Transmisión propagada persona a persona','Error de notificación'],2,'Ondas a intervalos de ~1 período de incubación son típicas de transmisión propagada.'],
+['B','De 120 asistentes a un evento, 30 enfermaron. ¿Cuál es la tasa de ataque?',['4 %','12 %','25 %','30 %'],2,'30 / 120 = 25 %.'],
+['B','En un brote hay 80 casos y 6 muertes por la enfermedad. La letalidad es:',['0.75 %','6 %','7.5 %','13 %'],2,'6 / 80 = 7.5 %. La letalidad no es una tasa de mortalidad poblacional.'],
+['B','En un hospital, ¿cuál situación se considera un brote aunque haya solo dos casos?',['Dos infecciones urinarias por E. coli sensible en servicios distintos','Dos casos de K. pneumoniae productora de NDM en la misma UCI, que nunca se había aislado allí','Dos neumonías comunitarias al ingreso','Dos pacientes con fiebre postoperatoria sin cultivo'],1,'Dos o más casos vinculados de un patógeno o resistencia inusual en el servicio ya justifican tratarlo como brote.'],
+['B','¿Desde cuándo se considera operativamente una infección como asociada a la atención en salud?',['Desde el ingreso','Desde las 24 h','A partir de ≥48 h del ingreso (día 3)','Solo después de 7 días'],2,'Si aparece en el día 3 o después y no estaba presente ni incubándose al ingreso.'],
+['B','¿Cuándo deben implementarse las medidas de control en un brote?',['Solo al confirmar la hipótesis con un estudio analítico','Desde el inicio, en paralelo con la investigación','Al cerrar el brote','Cuando la autoridad nacional lo publique'],1,'Las medidas se aplican desde el principio y se ajustan con los hallazgos.'],
+['R','¿Cuál de estos eventos NO es de notificación obligatoria inmediata siempre, sino que requiere aplicar el algoritmo del Anexo 2?',['Viruela','Poliomielitis por poliovirus salvaje','Influenza humana por un nuevo subtipo','Cólera'],3,'Viruela, polio salvaje, influenza por nuevo subtipo y SARS se notifican siempre. Cólera entra en la lista de eventos que siempre deben evaluarse con el algoritmo.'],
+['R','Según el Anexo 2 del RSI, un evento se notifica si cumple al menos:',['1 de 4 criterios','2 de 4 criterios','3 de 4 criterios','Los 4 criterios'],1,'Los criterios: impacto grave, inusual/imprevisto, riesgo de propagación internacional, riesgo de restricciones a viajes o comercio.'],
+['R','¿En qué plazo debe un Estado Parte notificar a la OMS un evento que puede constituir una ESPII?',['1 hora','24 horas tras la evaluación','72 horas','7 días'],1,'Artículo 6 del RSI: dentro de 24 horas tras evaluar la información de salud pública.'],
+['R','¿Qué novedad introdujeron las enmiendas al RSI adoptadas en 2024?',['Eliminaron el concepto de ESPII','Crearon la categoría de "emergencia pandémica" y la Autoridad Nacional del RSI','Obligaron a cerrar fronteras ante toda ESPII','Transfirieron la declaración de ESPII a la Asamblea General de la ONU'],1,'También refuerzan equidad y acceso a productos sanitarios. Entraron en vigor en septiembre de 2025.'],
+['R','En el marco HEPR de la OMS (5 C), ¿en qué componente se ubica principalmente PCI?',['Vigilancia colaborativa','Protección comunitaria','Atención segura y escalable','Acceso a contramedidas'],2,'Safe and scalable care: tamizaje, aislamiento, protección del personal y continuidad de servicios esenciales.'],
+['R','¿Cuál NO es una función del Sistema de Gestión de Incidentes (IMS) de la OMS?',['Liderazgo','Información y planificación','Operaciones de salud y experticia técnica','Investigación académica y publicaciones'],3,'Las funciones son: liderazgo, coordinación de socios, información y planificación, operaciones de salud y experticia técnica, soporte operativo y logística, finanzas y administración.'],
+['R','En el Marco de Respuesta a Emergencias de la OMS, una emergencia de grado 3 implica:',['Un evento local que no requiere apoyo','Respuesta limitada de la oficina de país','Una respuesta mayor que moviliza a toda la organización','Una emergencia ya cerrada'],2,'Grado 3: impacto severo que requiere respuesta sustancial de toda la OMS; existe además la categoría de emergencia prolongada.'],
+['G','Durante un brote de ébola, ¿cuánto dura el seguimiento de contactos?',['7 días','14 días','21 días','42 días'],2,'21 días = período máximo de incubación. El brote se declara terminado tras 42 días (dos períodos) sin casos nuevos.'],
+['G','¿Qué es el enfoque "ring IPC" en un brote de ébola?',['Vacunación en anillo de contactos','Intervención intensiva de PCI en los establecimientos y la comunidad alrededor de un caso nuevo','Cerco militar a la comunidad afectada','Zona de exclusión de 1 km alrededor del hospital'],1,'Se evalúan y refuerzan de inmediato PCI y WASH en los establecimientos donde el caso consultó y en su entorno, para cortar la transmisión nosocomial.'],
+['G','¿Por qué un programa para sobrevivientes de ébola incluye pruebas de semen y consejería?',['Por la toxicidad del tratamiento','Porque el virus puede persistir en semen meses después de la recuperación y transmitirse sexualmente','Por exigencia de las aseguradoras','Porque los sobrevivientes son reinfectados con facilidad'],1,'La persistencia viral en sitios inmunoprivilegiados se ha relacionado con nuevas cadenas de transmisión.'],
+['G','En un centro de tratamiento de cólera sin jabón disponible, la higiene de manos se hace con cloro al:',['0.05 %','0.5 %','2 %','5 %'],0,'0.05 % para manos y piel. Concentraciones más altas dañan la piel.'],
+['G','Un hospital pediátrico se prepara ante casos de sarampión en el país. ¿Qué medida de preparación es prioritaria?',['Comprar overoles de ébola','Verificar y completar la inmunidad del personal y organizar triage con aislamiento aéreo en la entrada','Cerrar el servicio de urgencias','Usar solo mascarilla médica en todo el personal'],1,'La inmunidad del personal y el tamizaje en la entrada con aislamiento inmediato evitan la transmisión nosocomial.'],
+['M','En las directrices OMS 2017 para EPC/ABRC/PARC, los cultivos de vigilancia ambiental se recomiendan para:',['Solo EPC','ABRC y PARC','Todos, de rutina, en cualquier hospital','Ninguno'],1,'La recomendación condicional de vigilancia ambiental aplica a A. baumannii y P. aeruginosa resistentes a carbapenémicos, por su persistencia en el ambiente.'],
+['M','¿Cuál de estos patógenos NO está en la categoría crítica de la lista OMS de patógenos bacterianos prioritarios 2024?',['A. baumannii resistente a carbapenémicos','Enterobacterales resistentes a carbapenémicos','M. tuberculosis resistente a rifampicina','S. aureus resistente a meticilina'],3,'MRSA está en prioridad alta. Los críticos son ABRC, Enterobacterales resistentes a cefalosporinas de 3.ª generación, Enterobacterales resistentes a carbapenémicos y TB resistente a rifampicina.'],
+['M','La Declaración política de la ONU sobre RAM (2024) fijó como meta para 2030:',['Eliminar las muertes por RAM','Reducir 10 % las muertes asociadas a RAM y que el 70 % de los antibióticos en humanos sean del grupo Access','Prohibir los antibióticos de reserva','Duplicar el consumo de antibióticos en países de bajos ingresos'],1,'También incluyó una meta de financiamiento catalítico de USD 100 millones y un panel independiente de evidencia sobre RAM.'],
+['M','Según el kit práctico de la OMS (2019), ¿cuál NO es un elemento básico del PROA en un establecimiento?',['Compromiso de la dirección','Rendición de cuentas y responsabilidades','Informes y retroalimentación','Prohibición total de antibióticos del grupo Watch'],3,'Los seis elementos son: compromiso de la dirección, rendición de cuentas, intervenciones, educación, monitoreo y vigilancia, e informes y retroalimentación. Los antibióticos Watch se usan con criterio, no se prohíben.'],
+['M','¿Qué intervención del PROA revisa las prescripciones y recomienda al prescriptor sin bloquear la dispensación?',['Preautorización','Auditoría prospectiva con retroalimentación','Formulario restringido','Rotación de antibióticos'],1,'La auditoría prospectiva con retroalimentación (prospective audit and feedback) es una de las intervenciones con mejor evidencia y menos fricción con los clínicos.'],
+['M','¿A qué objetivo del Plan de Acción Mundial sobre RAM corresponde principalmente el PROA?',['Objetivo 1: concienciación','Objetivo 3: reducir la incidencia de infecciones','Objetivo 4: optimizar el uso de antimicrobianos','Objetivo 5: inversión sostenible'],2,'El objetivo 4 es optimizar el uso. PCI corresponde sobre todo al objetivo 3.'],
+['M','Un indicador estándar del consumo hospitalario de antibióticos es:',['DDD por 100 camas-día','Número de cultivos por mes','Días de estancia promedio','Tasa de ataque'],0,'DDD por 100 camas-día (o DOT por 1000 pacientes-día). En la comunidad se usa DDD por 1000 habitantes-día.'],
+['D','Según la guía OMS de prevención de ISQ, ¿cuándo debe administrarse la profilaxis antibiótica?',['Al terminar la cirugía','Dentro de los 120 minutos antes de la incisión','24 horas antes de la cirugía','Durante 5 días después de la cirugía'],1,'Dentro de los 120 min previos a la incisión, considerando la vida media del antibiótico. No se prolonga después de la cirugía.'],
+['D','En la preparación del paciente quirúrgico, la OMS recomienda sobre el vello:',['Rasurar con navaja la noche anterior','No retirarlo, o cortarlo con máquina si es imprescindible','Rasurar siempre en el quirófano','Usar crema depilatoria de rutina'],1,'El rasurado con navaja aumenta la ISQ por microlesiones de la piel.'],
+['D','¿Cuál de estas medidas NO forma parte del paquete para prevenir la ITS-CVC?',['Máximas barreras estériles en la inserción','Antisepsia con clorhexidina en alcohol','Recambio rutinario del catéter cada 72 horas','Revisión diaria de la necesidad del catéter'],2,'El recambio rutinario no reduce las infecciones y añade riesgo. Se retira cuando ya no es necesario.'],
+['D','La tasa de ITU asociada a sonda vesical se expresa como:',['Casos por 100 egresos','Casos por 1000 días-sonda','Casos por 1000 habitantes','Casos por cama'],1,'El denominador es la exposición al dispositivo: días-sonda.'],
+['B','Si el R0 del sarampión es 15, el umbral aproximado de inmunidad de rebaño es:',['50 %','80 %','93 %','100 %'],2,'1 − 1/15 ≈ 0.93. Por eso la meta es ≥95 % de cobertura con dos dosis.'],
+['B','En la semana 6 de un brote, el Rt estimado es 0.7. ¿Qué significa?',['La epidemia está creciendo','Cada caso genera en promedio menos de un caso nuevo y la epidemia decrece','El brote terminó','No hay transmisión comunitaria'],1,'Rt &lt; 1 indica descenso, pero el brote no termina hasta cumplir el criterio de cierre.'],
+['E','¿Cuál NO es una de las 4 S de la capacidad de expansión hospitalaria?',['Personal (staff)','Insumos (stuff)','Estructura (structure)','Patrocinadores (sponsors)'],3,'Las 4 S son personal, insumos, estructura y sistemas.'],
+['E','¿Cuál herramienta de monitoreo del RSI es una autoevaluación anual obligatoria?',['JEE','SPAR','Revisión posacción','Simulacro de mesa'],1,'El SPAR es el informe anual obligatorio de los Estados Parte. La JEE es externa y voluntaria.'],
+['E','Para analizar y corregir la respuesta mientras el brote sigue en curso se usa:',['Revisión posacción (AAR)','Revisión intraacción (IAR)','Evaluación externa conjunta (JEE)','Auditoría financiera'],1,'La IAR se hace durante la respuesta; la AAR, al terminar.'],
+['E','Un EMT tipo 2 ofrece:',['Solo atención ambulatoria','Hospitalización con cirugía de emergencia','Solo vacunación','Únicamente evacuación aérea'],1,'Tipo 1: ambulatorio; tipo 2: hospitalización y cirugía; tipo 3: referencia con cuidados intensivos.'],
+['E','Circulan rumores de que el centro de tratamiento de ébola "mata a los pacientes" y las familias esconden enfermos. ¿Cuál es la mejor respuesta?',['Aumentar la presencia policial','Escucha social, diálogo con líderes comunitarios y religiosos, visitas guiadas y comunicación de los casos que se recuperan','Ignorar los rumores para no amplificarlos','Prohibir la difusión de información por redes'],1,'La participación comunitaria bidireccional genera la confianza necesaria para que se detecten y deriven los casos.'],
+['E','Las muestras para diagnóstico de ébola se transportan como:',['Categoría B, UN3373','Categoría A, UN2814, con triple embalaje','Muestra exenta','Residuo común'],1,'Ébola, Marburgo y patógenos similares son de categoría A (sustancia infecciosa que afecta a los seres humanos).'],
+['O','¿Cuáles son los temas transversales de la OPS?',['Género, equidad, etnicidad y derechos humanos','Economía, comercio, turismo y migración','Clima, energía, agua y transporte','Innovación, tecnología, datos e inteligencia artificial'],0,'Integrarlos en el análisis y en las recomendaciones es esperable en una respuesta de consultor de la OPS.'],
+['O','¿Qué mecanismo de la OPS permite a los países comprar antimicrobianos, EPP y pruebas diagnósticas?',['El Fondo Rotatorio','El Fondo Estratégico','GOARN','ReLAVRA+'],1,'El Fondo Rotatorio es para vacunas; el Fondo Estratégico, para medicamentos e insumos esenciales.'],
+/* ---- Vigilancia IAAS: manual OMS 2024 ---- */
+['V','Según el marco de monitoreo de PCI de la OMS 2024–2030, ¿qué proporción de países debe tener un sistema nacional de vigilancia de IAAS y RAM asociada en 2030?',['30 %','50 %','Más del 80 %','100 %'],2,'La meta es escalonada: 30 % en 2026, 50 % en 2028 y más del 80 % en 2030. La misma meta aplica a los establecimientos terciarios y secundarios.'],
+['V','¿Qué dirección estratégica de la Estrategia mundial de PCI se centra en la vigilancia de IAAS?',['1. Compromiso político y políticas','4. Conocimiento y capacitación','5. Datos para la acción','7. Investigación y desarrollo'],2,'"Datos para la acción": sistemas de datos sobre PCI, WASH e IAAS, integración en los sistemas de información, rendición de cuentas y uso de los datos para mejorar, no para castigar.'],
+['V','Según los requisitos mínimos, ¿qué se espera de un hospital de atención terciaria en vigilancia de IAAS?',['Nada, no es un requisito','Vigilancia pasiva por notificación de los clínicos','Vigilancia activa de IAAS con información de RAM y retroalimentación oportuna, en particular a la dirección','Solo una encuesta de prevalencia cada 5 años'],2,'Terciaria: vigilancia activa con información de RAM, estructuras de apoyo (laboratorio, historias, personal formado) y retroalimentación regular. Secundaria: según planes nacionales. Primaria: no es requisito mínimo.'],
+['V','En atención primaria, la vigilancia de IAAS:',['Es requisito mínimo con vigilancia activa de ISQ','No es requisito mínimo, pero se siguen los planes nacionales, por ejemplo para detectar y notificar brotes','Exige una prevalencia puntual anual','Debe ser automatizada'],1,'Así lo indican los requisitos mínimos del componente básico 4.'],
+['V','Una UCI registró 5 IAAS nuevas en 1500 días-paciente en enero. ¿Cuál es la densidad de incidencia?',['0.33 por 1000 días-paciente','3.3 por 1000 días-paciente','5 %','33 por 1000 días-paciente'],1,'5 / 1500 × 1000 = 3.3 IAAS por 1000 días-paciente.'],
+['V','En un servicio hubo 8 ITU asociadas a sonda en 600 días-sonda. La densidad por dispositivo es:',['1.3 por 1000 días-sonda','8 por 1000 días-sonda','13.3 por 1000 días-sonda','16 %'],2,'8 / 600 × 1000 = 13.3 por 1000 días-sonda. El denominador es la exposición al dispositivo.'],
+['V','Un servicio tuvo 400 días-sonda y 1000 días-paciente. La razón de utilización de sonda es:',['0.04','0.40','2.5','4 %'],1,'Días-dispositivo / días-paciente = 0.40: en promedio, el 40 % de los días-paciente con sonda.'],
+['V','¿Cuál es una ventaja de la prevalencia puntual frente a la incidencia?',['Es la mejor para seguir tendencias y evaluar intervenciones','Es más rápida y barata y, a nivel nacional, capta todos los tipos de IAAS','Detecta brotes en tiempo real','Permite calcular la densidad por dispositivo con precisión'],1,'La incidencia es la mejor para tendencias, evaluación de intervenciones y detección de brotes, pero exige más recursos.'],
+['V','Sobre la vigilancia pasiva de IAAS, es correcto que:',['Es la más sensible','Es la menos sensible y la que tiene más subregistro','Requiere personal entrenado buscando casos activamente','Es siempre prospectiva'],1,'Depende de información no diseñada para vigilancia y de clínicos poco familiarizados con las definiciones. Puede ser la única opción factible, pero subregistra.'],
+['V','¿Cuál es la principal limitación de la vigilancia basada solo en el laboratorio para identificar IAAS?',['No identifica patógenos','Sin la fecha de ingreso es difícil distinguir una infección comunitaria de una IAAS','Es más cara que la basada en el paciente','No sirve para describir la RAM'],1,'Describe bien los patógenos y la RAM, pero sin datos clínicos ni la fecha de ingreso no permite atribuir la infección a la atención.'],
+['V','Con las definiciones simplificadas de la OMS 2024, una ITS se considera asociada a CVC si:',['El CVC se colocó ese mismo día','El CVC estaba colocado 2 días antes de cumplirse por primera vez un componente de la definición','El paciente tuvo un CVC en algún momento del ingreso','Hay cultivo positivo de la punta del catéter'],1,'El mismo criterio de "2 días antes" aplica a la CAUTI (sonda) y a la NAV (ventilación o intubación).'],
+['V','Según la OMS 2024, la categoría BSI-A2 corresponde a:',['Un hemocultivo con un patógeno reconocido','Fiebre, escalofríos o hipotensión más dos hemocultivos positivos para un comensal cutáneo en muestras separadas dentro de 48 h','Fiebre más tratamiento sin hemocultivo','Un hemocultivo con un comensal sin síntomas'],1,'A1: un hemocultivo con patógeno reconocido. A2: dos hemocultivos con comensal más un signo. B: un comensal más un signo más tratamiento. SUSI: signo más tratamiento sin hemocultivo.'],
+['V','La categoría SUSI de las definiciones OMS 2024 se aplica cuando el paciente tiene un signo sistémico, se inicia tratamiento antimicrobiano y:',['Hay dos hemocultivos positivos','No se tomó hemocultivo','Hay urocultivo positivo','Hay imagen sugestiva'],1,'SUSI (infección sistémica sospechada no identificada) permite contar infecciones donde no se tomó hemocultivo, algo frecuente con recursos limitados.'],
+['V','La ventana de vigilancia de ISQ en las definiciones OMS 2024 es de:',['48 horas','7 días','30 días tras el procedimiento','1 año en todos los casos'],2,'Las cuatro categorías (A a D) exigen aparición dentro de los 30 días posteriores a la cirugía, estratificadas en superficial, profunda y de órgano o espacio.'],
+['V','En la validación de las definiciones OMS frente a las del ECDC, ¿cuál tuvo la menor sensibilidad?',['Torrente sanguíneo','Infección urinaria','Sitio quirúrgico','Neumonía (80 %)'],3,'Concordancia del 95.7 % en neumonía con sensibilidad del 80 %. La ITS tuvo sensibilidad del 100 %. Las IAAS sumaron el 17.9 % con la definición OMS frente al 11.7 % con la del ECDC.'],
+['V','¿Qué diferencia una definición de caso de vigilancia de un diagnóstico clínico?',['La de vigilancia usa criterios objetivos a nivel poblacional y busca consistencia; el diagnóstico clínico busca exactitud individual para guiar la atención','Son idénticas','El diagnóstico clínico sirve para comparar hospitales','La definición de vigilancia guía el tratamiento del paciente'],0,'Por eso un caso puede cumplir la definición de vigilancia sin ser tratado como tal, o al revés.'],
+['V','Durante una emergencia, para integrar alertas de IAAS en la alerta temprana (EWAR), el componente basado en indicadores debe notificar:',['Solo las muertes','Al paciente hospitalizado con síntomas nuevos que cumplen la definición, con fecha de ingreso y de inicio de síntomas','El consumo de antibióticos','El puntaje IPCAF del hospital'],1,'Las dos fechas permiten distinguir la adquisición hospitalaria. El componente basado en eventos usa criterios preestablecidos para notificar conglomerados.'],
+['V','En la vigilancia semiautomatizada de IAAS:',['El algoritmo selecciona pacientes con alta probabilidad de IAAS y una persona confirma el caso','El algoritmo hace todo sin revisión humana','Solo se automatiza el envío del informe','Se elimina el laboratorio'],0,'La revisión manual se mantiene, pero sobre muchas menos historias. En la totalmente automatizada no hay confirmación humana.'],
+['V','En la encuesta OMS 2019 con el IPCAF, la mediana ponderada del componente de vigilancia en países de ingresos bajos fue:',['12.5/100','50/100','70/100','85/100'],0,'Frente a 85/100 en los de ingresos altos: la vigilancia es de los componentes menos implementados.'],
+['V','¿Cuál es la prevalencia combinada de IAAS estimada para la Región de las Américas en el manual OMS 2024?',['3.2 %','5.9 %','9.6 %','27 %'],2,'El 3.2 % es de EE. UU., el 5.9 % de la PPS europea del ECDC 2016–2017 y el 27 % de la Región de África.'],
+/* ---- Investigación de brotes de IAAS (ECDC) ---- */
+['I','Según el curso ECDC, ¿cuál de estas situaciones constituye un brote aunque haya un solo caso?',['Una ITU por E. coli sensible','Un caso de legionelosis asociada a la atención','Una neumonía comunitaria al ingreso','Una bacteriemia por S. epidermidis en un hemocultivo'],1,'Criterios de brote: ≥2 casos vinculados, número de casos por encima de la línea de base, o un solo caso por un patógeno raro o significativo.'],
+['I','Comparados con los brotes no específicos de la atención, los brotes específicos de la atención (ITS en UCI, ISQ):',['Son más frecuentes y con muchos casos','Son menos frecuentes, tienen pocos casos pero letalidad potencialmente alta, y a menudo los causan microorganismos multirresistentes','Son siempre respiratorios y estacionales','Solo ocurren en atención primaria'],1,'Los no específicos (influenza, norovirus) son más frecuentes, con muchos casos y pocas muertes.'],
+['I','¿Quién lidera la investigación inicial de un brote de IAAS en el hospital?',['El ministerio de salud','El equipo local de PCI, con los clínicos del servicio y microbiología','El área jurídica del hospital','El fabricante del dispositivo'],1,'Según el contexto se suman mantenimiento, limpieza, farmacia, salud ocupacional, la dirección y la autoridad de salud pública.'],
+['I','¿Cuál de estas situaciones indica una investigación completa del brote?',['Un brote de norovirus que cede con medidas genéricas','Casos nuevos a pesar de las medidas, o sospecha de contaminación intrínseca de un producto','Un caso confirmado de influenza estacional','Cualquier variación estacional esperada'],1,'También si hay gran impacto (letalidad alta, mecanismo de RAM nuevo), muchos casos o varios servicios afectados.'],
+['I','Al poner en marcha las medidas de control primarias, ¿qué se debe pedir al laboratorio desde el inicio?',['Descartar los aislamientos ya informados','Guardar los aislamientos para tipificación','Suspender los cultivos de vigilancia','Cambiar los métodos de identificación'],1,'Sin aislamientos guardados no se podrá demostrar clonalidad con PFGE o WGS más adelante.'],
+['I','Al introducir un tamizaje rectal en una UCI aumentan los "casos" de EPC. Antes de declarar un brote, ¿qué hay que descartar?',['Que sea un artefacto del numerador: casos prevalentes (colonizados de antes) contados como incidentes','Que haya aumentado el número de camas','Que se hayan hecho menos cultivos','Que hayan aumentado las altas'],0,'Otros artefactos: mayor conciencia, cambios en la vigilancia, errores de laboratorio y cambios del denominador.'],
+['I','Sobre el muestreo ambiental en un brote de IAAS, ¿qué es correcto?',['Siempre debe ser amplio y de rutina','Debe estar guiado por una hipótesis, y un positivo no prueba por sí solo que esa sea la fuente','Nunca está indicado','Debe hacerse solo después de la limpieza terminal'],1,'Además, si se toma tras la limpieza de las medidas inmediatas puede no ser concluyente.'],
+['I','¿Por qué las muestras de agua pueden dar falsos negativos en la búsqueda de la fuente?',['Por las bacterias en biopelículas que se liberan de forma intermitente y por el cloro residual del agua potable','Por exceso de medio de cultivo','Porque el agua siempre es estéril','Por usar hisopos estériles'],0,'Por eso un resultado negativo de agua no descarta un reservorio en sifones, grifos o tuberías.'],
+['I','En un brote de ITS por Serratia, los casos tuvieron más probabilidad de haber recibido la solución de infusión "Q" que los controles. ¿Qué medida de asociación se calculó?',['Riesgo relativo','Razón de momios (OR)','Prevalencia','Tasa de ataque'],1,'Los estudios de casos y controles comparan la exposición y estiman OR. Los de cohorte comparan la incidencia entre expuestos y no expuestos y estiman RR.'],
+['I','¿Cuándo está indicado un estudio analítico en un brote de IAAS?',['Siempre, antes de cualquier medida','Cuando aporta valor, hay apoyo metodológico y estadístico, el número de casos y controles es suficiente y hay datos de exposición','Nunca en hospitales','Solo si lo exige el ministerio'],1,'Las medidas de control no esperan al estudio analítico.'],
+['I','Según el curso ECDC, ¿cómo se resuelven la mayoría de los brotes de IAAS?',['Con secuenciación genómica','Con estudios de cohorte','Con la observación en terreno de prácticas clave, la identificación de desviaciones de protocolo y los datos descriptivos','Con modelos matemáticos'],2,'Observar la preparación de medicamentos, la higiene de manos, el cuidado de accesos vasculares y el reprocesamiento suele revelar la falla.'],
+['I','¿Cuál fue una lección principal del brote por K. pneumoniae BLEE en la UCIN de Bremen?',['La cohorte y las barreras se aplicaron solo a los casos conocidos, mientras había muchos no detectados; se necesitaba tamizaje sistemático temprano','El brote se debió a una fuente ambiental única','Se resolvió en una semana sin muertes','No hubo transmisión a otros servicios'],0,'Hubo 37 lactantes afectados, 10 ITS y 7 muertes; detección tardía, propagación a otros servicios y reintroducción por reingresos. En la transmisión persona a persona el caso es la fuente.'],
+['I','¿Cuál es una limitación de la secuenciación del genoma completo (WGS) en la investigación de brotes?',['Bajo poder discriminatorio','Costo, tiempo de respuesta y necesidad de expertos en bioinformática','No detecta genes de resistencia','No puede delinear cadenas de transmisión'],1,'Sus ventajas son mayor poder discriminatorio, detección de genes de resistencia y virulencia, y reconstrucción de la transmisión.'],
+['I','En un brote, las definiciones de caso deben ser:',['Las mismas de la vigilancia de rutina','Sensibles y propias del brote, que se afinan con el tiempo (por ejemplo, hasta el genotipo de la cepa)','Solo para confirmados por WGS','Solo clínicas, sin criterio de tiempo ni lugar'],1,'Con criterios de persona, lugar y tiempo y categorías confirmado, probable y posible.'],
+['I','¿Cuál de estas preguntas NO es una pregunta guía de la epidemiología descriptiva?',['¿Dónde está el brote?','¿Cuándo ocurrieron los casos?','¿Quién está enfermo?','¿De quién es la culpa?'],3,'Buscar culpables destruye la colaboración del personal, que es imprescindible para encontrar la falla.'],
+['I','Un conglomerado de aspergilosis invasora en hematología sugiere sobre todo:',['Obras o demolición cercanas con transmisión por la ventilación','Viales multidosis contaminados','Un portador nasal entre el personal','Agua de diálisis'],0,'Es un ejemplo clásico de hipótesis ambiental aérea.'],
+['I','Un brote por Burkholderia cepacia causado por un enjuague bucal contaminado de fábrica es un ejemplo de:',['Contaminación extrínseca','Contaminación intrínseca de un producto (fuente común)','Transmisión persona a persona','Seudobrote'],1,'Intrínseca: el producto llega contaminado de fábrica. Extrínseca: se contamina durante el uso (viales multidosis, endoscopio).'],
+['I','En la vigilancia basada en eventos (EBS), el flujo de trabajo inicial es:',['Recolectar, analizar e interpretar datos estructurados de rutina','Tamizar, filtrar y validar señales de fuentes diversas, a menudo no estructuradas','Solo procesar datos de laboratorio','Solo procesar notificaciones obligatorias'],1,'La vigilancia basada en indicadores recolecta, analiza e interpreta. Ambas generan señales que se confirman, evalúan e investigan.'],
+['I','La sala A tuvo 10 IAAS en 100 pacientes (300 días-paciente) y la sala B 20 IAAS en 150 pacientes (750 días-paciente). ¿Qué afirmación es correcta?',['B tiene mayor incidencia acumulada (13.3 %), pero menor densidad (26.7 vs. 33.3 por 1000 días-paciente)','A tiene más riesgo en todos los indicadores','Ambas tienen el mismo riesgo','B tiene mayor densidad de incidencia'],0,'La sala B tiene estancias más largas. Para comparar riesgo entre servicios se usa la densidad.'],
+['I','Los métodos automáticos de detección de brotes (control estadístico de procesos, estadística de escaneo, umbrales):',['Reemplazan a los equipos de PCI','Son una herramienta de apoyo y no una solución autónoma','Solo funcionan con datos no estructurados','Eliminan la necesidad de umbrales'],1,'Revisión de Leclère (2017): resultados difíciles de comparar; sirven como apoyo. Con la automatización, la carga de trabajo pasa de PCI a TI.'],
+['I','¿Cuál es el patógeno más frecuente en las IAAS de la encuesta de prevalencia del ECDC 2016–2017?',['S. aureus','Escherichia coli','P. aeruginosa','C. difficile'],1,'E. coli 16.1 %, S. aureus 11.6 %, Klebsiella 10.4 %, Enterococcus 9.7 % y P. aeruginosa 8.0 %. La prevalencia de IAAS fue del 5.9 %.'],
+['I','Para no perder conglomerados que la vigilancia rutinaria no detecta, el hospital necesita:',['Más formularios en papel','Un sistema intrahospitalario de notificación de brotes con canales formales e informales entre clínicos, laboratorio y PCI','Esperar el informe anual','Vigilar solo la UCI'],1,'Los conglomerados se pierden si no se vigilan todas las IAAS o todas las unidades, si no hay acceso a listados de laboratorio o si falta personal de PCI.'],
+/* ---- Comunicación de brotes ---- */
+['C','Según el curso ECDC de comunicación, ¿cuándo debe anunciarse un brote hospitalario?',['Cuando esté resuelto','Lo antes posible: el primer anuncio es crítico','Solo si la prensa pregunta','Nunca, para proteger la reputación'],1,'Anunciar temprano evita rumores, la pérdida de confianza y la sospecha de encubrimiento. La pregunta será: "¿qué sabían y cuándo lo supieron?".'],
+['C','¿Cuál NO es uno de los cuatro factores que determinan la credibilidad de quien comunica un riesgo?',['Empatía y cuidado','Honestidad y apertura','Competencia y experticia','Certeza absoluta sobre el desenlace'],3,'Los cuatro son empatía y cuidado, honestidad y apertura, dedicación y compromiso, y competencia y experticia. Prometer certezas resta credibilidad.'],
+['C','Un periodista repite una acusación falsa sobre el hospital. ¿Cuál es la recomendación?',['Repetir la acusación para desmentirla','Refutarla sin repetirla y llevar la conversación a los hechos','Ignorar la pregunta','Culpar a otra institución'],1,'Repetir la acusación la refuerza. Se usan fórmulas como "No exactamente; déjeme aclarar…".'],
+['C','El público acepta menos un riesgo cuando:',['Es natural y conocido','Lo crean otros, no tiene beneficio claro, es de origen humano, viene de una fuente no confiable o es exótico','Es voluntario','Tiene un beneficio claro'],1,'La percepción del riesgo depende también de la angustia: a mayor angustia, mayor riesgo percibido.'],
+['C','¿Cuál es el primer paso al comunicar un brote?',['Presentar las tasas','Empezar con empatía','Defender la reputación de la institución','Explicar la normativa'],1,'Luego se explica la amenaza, lo que se sabe y lo que no, qué se hace para saber más, qué se hace para reducir el riesgo, qué acciones se toman y por qué, el compromiso, y se mantiene una actitud científica.'],
+['C','En una organización con alta distancia de poder, ¿qué cabe esperar durante un brote?',['Más consulta y decisiones compartidas','Decisiones concentradas en la jerarquía, poca consulta y el desacuerdo visto como desafío a la autoridad','Más transparencia','Menos burocracia'],1,'Con alta evitación de la incertidumbre, además, el miedo a la mala publicidad puede pesar más que el brote.'],
+['C','Antes de una declaración pública sobre un brote, lo primero es:',['Informar a los socios y a la dirección y preparar el mensaje y las respuestas probables','Publicar en redes sociales','Esperar dos semanas a tener todos los datos','Que el epidemiólogo vaya solo a la rueda de prensa'],0,'No ir solo y apoyar al responsable de comunicaciones, que suele no tener experiencia en brotes.'],
+['C','Al comunicar datos de un brote, ¿qué conviene hacer?',['Hablar en términos absolutos','Destacar tendencias y lo que se hará para mejorar, y dar la mejor estimación del riesgo según la ciencia','Especular sobre escenarios hipotéticos','Atacar la exactitud de los datos de otros'],1,'Prometa solo lo que pueda cumplir, defina los términos técnicos y diga a la gente qué puede hacer para reducir su riesgo.'],
+/* ---- ICAR CDC ---- */
+['K','¿Para qué sirve la herramienta ICAR del CDC?',['Para acreditar hospitales','Para evaluar sistemáticamente las prácticas de PCI de un establecimiento y orientar la mejora cerrando brechas','Para calcular tasas de IAAS','Para notificar eventos al RSI'],1,'Se usa en atención aguda, larga estancia y ambulatoria, con entrevistas sobre políticas y observación directa.'],
+['K','¿En qué entorno NO está pensada la ICAR general de PCI?',['Hospitales de agudos','Centros de larga estancia','Atención ambulatoria','Hemodiálisis ambulatoria'],3,'La hemodiálisis ambulatoria tiene herramientas propias del CDC. Para UCIN existe un suplemento.'],
+['K','¿Cuáles son los 4 pasos de una ICAR?',['Programar, realizar la evaluación, dar retroalimentación verbal y escrita, y dar seguimiento a la implementación','Notificar, sancionar, cerrar y reabrir','Muestrear, cultivar, tipificar e informar','Planificar, comprar, distribuir y auditar'],0,'La guía del facilitador incluye la práctica recomendada para dar retroalimentación inmediata.'],
+['K','Según el CDC, una sala de aislamiento aéreo (AIIR) debe tener:',['≥2 recambios de aire por hora','≥6 ACH en instalaciones existentes o ≥12 ACH en nuevas o renovadas, con extracción al exterior o filtro HEPA','≥25 ACH siempre','Ventilación natural sin requisitos'],1,'Además, presión negativa verificada a diario mientras está ocupada y puerta cerrada. La OMS menciona ≥12 ACH o 160 L/s por paciente con ventilación natural.'],
+['K','¿Con qué frecuencia se verifica la presión negativa de una AIIR ocupada?',['Una vez al año','A diario, con indicadores visuales (tiras, humo) o monitores','Solo al construirla','Cada mes'],1,'Así lo recomiendan el CDC y la ICAR.'],
+['K','No hay AIIR y llega un paciente con sospecha de sarampión. Según el CDC:',['Se deja en la sala de espera con mascarilla','Se coloca mascarilla al paciente, se ubica en un consultorio con puerta cerrada y, tras su salida, el consultorio queda vacío ~1 hora','Se atiende en el pasillo','Basta un ventilador portátil'],1,'El tiempo de espera permite la renovación del aire; depende de los recambios por hora de la sala.'],
+['K','¿Con qué frecuencia se usa el indicador biológico en la esterilización?',['En cada carga, siempre','Al menos una vez por semana por esterilizador y en cada carga con implantes, en cuarentena hasta resultado negativo','Una vez al mes','Una vez al año'],1,'Indicadores mecánicos y químicos en cada carga; Bowie-Dick diaria en esterilizadores de prevacío.'],
+['K','La prueba de Bowie-Dick se realiza:',['A diario, en la cámara vacía de un esterilizador de prevacío','Una vez por semana','En cada carga','Solo tras una reparación'],0,'Verifica la remoción de aire en los esterilizadores de remoción dinámica de aire.'],
+['K','Un vial multidosis que ya se abrió (se puncionó) debe:',['Desecharse a los 28 días, salvo que el fabricante indique otro plazo, y fecharse al abrirlo','Desecharse a los 7 días','Usarse hasta la fecha de vencimiento original','Desecharse a las 24 h'],0,'Debe dedicarse a un solo paciente cuando sea posible, y siempre si entra al área inmediata de atención.'],
+['K','¿Con qué frecuencia se hace la prueba de fugas de un endoscopio flexible?',['En cada ciclo de reprocesamiento','Cada mes','Solo si se ve un daño','Una vez al año'],0,'Si falla, el endoscopio se retira de uso y se repara. La concentración mínima efectiva del desinfectante de alto nivel se verifica al menos cada día de uso.'],
+['K','En el monitoreo de glucosa a cargo del personal, ¿qué dispositivos de punción digital se recomiendan?',['Portalancetas reutilizable cambiando la lanceta','Dispositivos desechables, de un solo uso y autodesactivables','Compartidos, limpiándolos con alcohol al 70 %','Cualquiera, si se usan guantes'],1,'Un portalancetas nunca se comparte, aunque se cambie la lanceta. Estas fallas causaron brotes de hepatitis B.'],
+['K','Si un glucómetro debe compartirse entre pacientes:',['Se limpia y desinfecta después de cada uso según el fabricante; si el fabricante no indica cómo, no se comparte','Se limpia con alcohol al 70 % una vez por semana','No requiere limpieza','Solo se limpia si tiene sangre visible'],0,'El etanol al 70 % no es eficaz contra los virus de transmisión sanguínea. Lo ideal es asignar un glucómetro a cada paciente.'],
+['K','En hogares de ancianos, el CDC recomienda precauciones de barrera reforzadas (Enhanced Barrier Precautions) para:',['Todos los residentes','Residentes con heridas o dispositivos invasivos, o con infección o colonización por MDRO, cuando no corresponden precauciones de contacto','Solo los residentes con C. difficile','Solo los residentes con tuberculosis'],1,'Se usan bata y guantes en las actividades de cuidado de alto contacto. No exigen habitación individual ni restringen las actividades del residente.'],
+['K','Según el CDC, en un hospital de agudos se puede considerar suspender las precauciones de contacto por un MDRO cuando:',['Pasaron 48 h de antibiótico','Pasaron ≥6 meses desde el último cultivo positivo y hay ≥2 tamizajes negativos consecutivos con ≥1 semana de diferencia','El paciente es dado de alta','Nunca'],1,'La decisión es caso a caso. Para algunos MDRO, como C. auris o EPC, muchos establecimientos las mantienen indefinidamente.'],
+['K','Un paciente con influenza debe estar en precauciones de gotas durante:',['24 horas','7 días desde el inicio o hasta 24 h después de resolverse la fiebre y los síntomas respiratorios, lo que sea más largo','14 días','Hasta el alta, siempre'],1,'Es la recomendación del CDC recogida en el módulo 3 de la ICAR.'],
+['K','Para evitar la dispersión de MDRO desde los lavamanos, la ICAR recomienda:',['Guardar los insumos debajo del lavamanos','Que el grifo no descargue directamente sobre el desagüe y que los insumos estén a ≥3 pies (~1 m) o detrás de una barrera contra salpicaduras','Desinfectar el lavamanos una vez al mes','Usar el lavamanos para desechar líquidos'],1,'Los desagües forman biopelículas con EPC y otros MDRO; las salpicaduras contaminan el entorno.'],
+['K','Según el CDC, ¿cuándo debe hacerse una investigación completa de la fuente de Legionella en un establecimiento?',['Ante 10 casos en un año','Ante 1 caso presuntivo de legionelosis asociada a la atención, o 2 casos posibles en 12 meses','Solo si hay una muerte','Solo ante resultados ambientales positivos'],1,'Recuerde también que un solo caso de legionelosis asociada a la atención cumple el criterio de brote del ECDC. Diagnóstico: cultivo respiratorio más antígeno urinario.'],
+['K','Según la ICAR, ¿cómo se define una evaluación de competencias en PCI?',['Un certificado de asistencia','Una prueba de conocimientos más la observación directa de la técnica','Una autoevaluación del trabajador','Una encuesta de satisfacción'],1,'La formación se da al ingreso, al menos una vez al año y ante nuevos procesos o fallas.'],
+['K','Para limpiar la habitación de un paciente con C. difficile se requiere un producto:',['Con amonio cuaternario solo','Esporicida (Lista K de la EPA)','Alcohol al 70 %','Detergente neutro'],1,'Para C. auris se usan productos de la Lista P. En todos los casos hay que respetar el tiempo de contacto húmedo.'],
+['K','¿Dónde se preparan los medicamentos inyectables según la ICAR?',['Junto al lavamanos para lavarse rápido','En un área limpia designada, lejos de lavamanos (el agua salpica más de 1 m) y de material usado','En la cama del paciente','En la estación de enfermería junto a las muestras de sangre'],1,'Se desinfecta el tapón con alcohol y se usa una aguja y una jeringa nuevas cada vez.'],
+['K','¿Cuál es el equivalente de la OMS más cercano a una evaluación de PCI en el establecimiento como la ICAR del CDC?',['JEE','IPCAF','SPAR','GLASS'],1,'El IPCAF es una autoevaluación por puntaje (0–800). La ICAR combina entrevista guiada y observación. En una misión pueden usarse juntos.']
+];
+const nQ=document.getElementById('nQ');if(nQ)nQ.textContent=Q.length;
+
+const topicSel=document.getElementById('topicSel');
+topicSel.innerHTML='<option value="all">Todos los temas</option>'+Object.entries(T).map(([k,v])=>`<option value="${k}">${v}</option>`).join('');
+let ans=store.get('ans',{}); // index -> chosen option
+let order=Q.map((_,i)=>i), pos=0, onlyWrong=false;
+// las opciones se barajan una vez por sesión: la posición de la correcta no debe dar pistas
+const permCache={};
+function shuffled(a){a=a.slice();for(let k=a.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[a[k],a[j]]=[a[j],a[k]]}return a}
+function perm(i){return permCache[i]||(permCache[i]=shuffled(Q[i][2].map((_,j)=>j)))}
+function pool(){const t=topicSel.value;return order.filter(i=>(t==='all'||Q[i][0]===t)&&(!onlyWrong||(ans[i]!==undefined&&ans[i]!==Q[i][3])))}
+function render(){
+  const p=pool(), card=document.getElementById('qcard');
+  if(!p.length){card.innerHTML=`<p class="qtext">${onlyWrong?'No quedan preguntas falladas en este tema. Bien.':'No hay preguntas para este filtro.'}</p>`;renderScore();return}
+  if(pos>=p.length)pos=p.length-1; if(pos<0)pos=0;
+  const i=p[pos], q=Q[i], chosen=ans[i], pm=perm(i);
+  card.innerHTML=`<div class="qmeta"><span class="tag">${T[q[0]]}</span><span>${pos+1} / ${p.length}</span></div>
+   <p class="qtext">${q[1]}</p><div class="opts">${pm.map((j,d)=>{
+     let c='';if(chosen!==undefined){if(j===q[3])c=' right';else if(j===chosen)c=' wrong'}
+     return `<button class="opt${c}" data-j="${j}" ${chosen!==undefined?'disabled':''}><span class="k">${'ABCD'[d]}</span><span>${q[2][j]}</span></button>`}).join('')}</div>
+   ${chosen!==undefined?`<div class="expl"><b>${chosen===q[3]?'Correcto.':'Respuesta: '+'ABCD'[pm.indexOf(q[3])]+'.'}</b> ${q[4]}</div>`:''}
+   <div class="qnav"><button class="btn" id="prev" ${pos===0?'disabled':''}>Anterior</button><button class="btn primary" id="next">${pos===p.length-1?'Ver resultado':'Siguiente'}</button></div>`;
+  card.querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{ans[i]=+b.dataset.j;store.set('ans',ans);render()}));
+  card.querySelector('#prev').addEventListener('click',()=>{pos--;render()});
+  card.querySelector('#next').addEventListener('click',()=>{if(pos<p.length-1){pos++;render()}else document.getElementById('score').scrollIntoView({behavior:'smooth'})});
+  renderScore();
+}
+function renderScore(){
+  const rows=Object.entries(T).map(([k,v])=>{const ids=Q.map((q,i)=>q[0]===k?i:-1).filter(i=>i>=0);const a=ids.filter(i=>ans[i]!==undefined);const ok=a.filter(i=>ans[i]===Q[i][3]).length;return{v,n:ids.length,a:a.length,ok}});
+  const tot=rows.reduce((s,r)=>({a:s.a+r.a,ok:s.ok+r.ok}),{a:0,ok:0});
+  const cell=(l,ok,a,n)=>{const pct=a?Math.round(ok/a*100):0;const cls=!a?'':pct<60?' low':pct<80?' mid':' high';return `<div class="sc${cls}"><div class="n">${a?pct+' %':'—'}</div><div class="l">${l} · ${ok}/${a} de ${n}</div><div class="meter"><i style="width:${pct}%"></i></div></div>`};
+  document.getElementById('score').innerHTML=cell('<b>Total</b>',tot.ok,tot.a,Q.length)+rows.map(r=>cell(r.v,r.ok,r.a,r.n)).join('');
+}
+topicSel.addEventListener('change',()=>{pos=0;render()});
+document.getElementById('shuffleBtn').addEventListener('click',()=>{for(let k=order.length-1;k>0;k--){const j=Math.floor(Math.random()*(k+1));[order[k],order[j]]=[order[j],order[k]]}pos=0;render()});
+const wb=document.getElementById('wrongBtn');
+wb.addEventListener('click',()=>{onlyWrong=!onlyWrong;wb.textContent=onlyWrong?'Ver todas':'Solo las falladas';if(onlyWrong){const p=pool();p.forEach(i=>delete ans[i]);store.set('ans',ans)}pos=0;render()});
+const rb=document.getElementById('resetBtn');let armed=false;
+rb.addEventListener('click',()=>{if(!armed){armed=true;rb.textContent='¿Seguro? Toque otra vez';setTimeout(()=>{armed=false;rb.textContent='Reiniciar respuestas'},3000);return}ans={};store.set('ans',ans);armed=false;rb.textContent='Reiniciar respuestas';pos=0;render()});
+render();
+
+/* ---------- examen cronometrado ---------- */
+const $=id=>document.getElementById(id);
+let ex=null, exTick=null; // ex = {qs:[índices], a:{}, pos, end (ms)}
+function exHist(){const h=store.get('exHist',[]);$('exHist').textContent=h.length?'Intentos anteriores: '+h.slice(-5).map(r=>`${r.d} · ${r.ok}/${r.n} (${Math.round(r.ok/r.n*100)} %)`).join(' · '):'Aún no ha hecho ningún examen.'}
+function exStart(){
+  const n=Math.min(+$('exN').value,Q.length);
+  // muestreo estratificado por tema, para que el examen cubra todos los módulos
+  const byT={};shuffled(Q.map((_,i)=>i)).forEach(i=>(byT[Q[i][0]]=byT[Q[i][0]]||[]).push(i));
+  const qs=[];const keys=shuffled(Object.keys(byT));
+  while(qs.length<n){let added=false;for(const k of keys){if(qs.length<n&&byT[k].length){qs.push(byT[k].pop());added=true}}if(!added)break}
+  ex={qs:shuffled(qs),a:{},pos:0,end:Date.now()+Math.round(n*75)*1000,perm:{}};
+  ex.qs.forEach(i=>ex.perm[i]=shuffled(Q[i][2].map((_,j)=>j)));
+  $('exSetup').hidden=true;$('exResult').hidden=true;$('exRun').hidden=false;
+  clearInterval(exTick);exTick=setInterval(exClock,1000);exClock();exRender();
+}
+function exClock(){
+  if(!ex)return;const s=Math.max(0,Math.round((ex.end-Date.now())/1000));
+  const t=$('exTimer');t.textContent=fmt(s);t.classList.toggle('low',s<300);
+  if(s<=0)exFinish();
+}
+function exRender(){
+  const i=ex.qs[ex.pos],q=Q[i],pm=ex.perm[i],ch=ex.a[i];
+  $('exPos').textContent=`Pregunta ${ex.pos+1} de ${ex.qs.length} · ${Object.keys(ex.a).length} respondidas`;
+  $('exCard').innerHTML=`<p class="qtext">${q[1]}</p><div class="opts">${pm.map((j,d)=>`<button class="opt${ch===j?' sel':''}" data-j="${j}"><span class="k">${'ABCD'[d]}</span><span>${q[2][j]}</span></button>`).join('')}</div>
+   <div class="qnav"><button class="btn" id="exPrev" ${ex.pos===0?'disabled':''}>Anterior</button><button class="btn primary" id="exNext">${ex.pos===ex.qs.length-1?'Ir a la primera sin responder':'Siguiente'}</button></div>`;
+  $('exCard').querySelectorAll('.opt').forEach(b=>b.addEventListener('click',()=>{ex.a[i]=+b.dataset.j;exRender()}));
+  $('exPrev').addEventListener('click',()=>{ex.pos--;exRender()});
+  $('exNext').addEventListener('click',()=>{if(ex.pos<ex.qs.length-1)ex.pos++;else{const k=ex.qs.findIndex(x=>ex.a[x]===undefined);if(k>=0)ex.pos=k}exRender()});
+  $('exDots').innerHTML=ex.qs.map((x,k)=>`<button class="${ex.a[x]!==undefined?'ans':''}${k===ex.pos?' cur':''}" data-k="${k}" aria-label="Pregunta ${k+1}">${k+1}</button>`).join('');
+  $('exDots').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ex.pos=+b.dataset.k;exRender()}));
+}
+function exFinish(){
+  if(!ex)return;clearInterval(exTick);exTick=null;
+  const r=ex.qs.map(i=>({i,ok:ex.a[i]===Q[i][3]}));const ok=r.filter(x=>x.ok).length;
+  const h=store.get('exHist',[]);h.push({d:new Date().toLocaleDateString('es'),ok,n:r.length});store.set('exHist',h);
+  const rows=Object.entries(T).map(([k,v])=>{const s=r.filter(x=>Q[x.i][0]===k);return{v,n:s.length,ok:s.filter(x=>x.ok).length}}).filter(x=>x.n);
+  const cell=(l,o,n)=>{const p=Math.round(o/n*100);return `<div class="sc ${p<60?'low':p<80?'mid':'high'}"><div class="n">${p} %</div><div class="l">${l} · ${o}/${n}</div><div class="meter"><i style="width:${p}%"></i></div></div>`};
+  const wrong=r.filter(x=>!x.ok);
+  $('exResult').innerHTML=`<h3>Resultado</h3><div class="score">${cell('<b>Total</b>',ok,r.length)}${rows.map(x=>cell(x.v,x.ok,x.n)).join('')}</div>
+   <p>${ok/r.length>=.8?'Nivel sólido. Mantenga el ritmo y pase a los casos escritos.':ok/r.length>=.6?'Aprobaría con margen estrecho. Repase los temas en naranja y rojo.':'Por debajo del 60 %. Vuelva al repaso de los temas en rojo antes del próximo intento.'}</p>
+   <h3>Para revisar (${wrong.length})</h3><div class="review">${wrong.map(x=>{const q=Q[x.i],a=ex.a[x.i];return `<div class="card"><span class="tag">${T[q[0]]}</span><p><b>${q[1]}</b></p><p>Su respuesta: ${a===undefined?'<i>sin responder</i>':q[2][a]}</p><p>Correcta: <b>${q[2][q[3]]}</b></p><div class="expl">${q[4]}</div></div>`}).join('')}</div>
+   <div class="qnav"><button class="btn primary" id="exAgain">Nuevo examen</button></div>`;
+  ex=null;$('exRun').hidden=true;$('exResult').hidden=false;$('exResult').scrollIntoView({behavior:'smooth'});
+  $('exAgain').addEventListener('click',()=>{$('exResult').hidden=true;$('exSetup').hidden=false;exHist()});
+}
+$('exStart').addEventListener('click',exStart);
+const eb=$('exEnd');let exArmed=false;
+eb.addEventListener('click',()=>{if(!exArmed){exArmed=true;eb.textContent='¿Seguro? Toque otra vez';setTimeout(()=>{exArmed=false;eb.textContent='Terminar y corregir'},3000);return}exArmed=false;eb.textContent='Terminar y corregir';exFinish()});
+exHist();
+
+/* ---------- casos ---------- */
+const C=[
+ ['Brote de EPC tipo NDM en UCI','Usted es consultor de PCI de la OPS. Un hospital de segundo nivel reporta 4 pacientes con <i>K. pneumoniae</i> productora de NDM en la UCI de adultos en 3 semanas; antes no se había aislado. Hay hacinamiento (ocupación 115 %) y un solo profesional de PCI a tiempo parcial. Describa su plan de respuesta para las primeras 72 horas y las recomendaciones a mediano plazo.',
+  ['<b>Primeras horas:</b> confirmar brote (comparar con línea de base), verificar identificación y mecanismo en laboratorio de referencia, notificar a la autoridad sanitaria según norma nacional.','<b>Control inmediato:</b> precauciones de contacto, cohorte de pacientes y personal dedicado, higiene de manos con auditoría diaria, limpieza y desinfección reforzada y terminal, restricción de traslados, alerta en historia clínica.','<b>Búsqueda de casos:</b> tamizaje rectal de contactos de sala, tamizaje al ingreso de pacientes de alto riesgo, revisión retrospectiva de cultivos, línea de lista y curva.','<b>Investigación:</b> mapa de camas, dispositivos y procedimientos compartidos, tipificación molecular para confirmar clonalidad, inspección de sifones y lavamanos.','<b>Componentes estructurales:</b> abordar ocupación y dotación (componente 7), fortalecer el programa de PCI (componente 1), coordinación con PROA para carbapenémicos.','<b>Comunicación:</b> reunión diaria del comité, informe a la dirección, información a pacientes y familias, aviso a hospitales receptores de traslados.','<b>Cierre y seguimiento:</b> criterio de cierre (p. ej., semanas sin casos nuevos con tamizaje negativo), indicadores, IPCAF de seguimiento. Citar: directrices OMS 2017 EPC/ABRC/PARC y componentes básicos 2016.']],
+ ['Caso sospechoso de fiebre hemorrágica en zona fronteriza','Llega a urgencias de un hospital municipal un viajero procedente de un país con brote activo de Marburgo, con fiebre, vómito y sangrado gingival. El hospital nunca ha atendido un caso así. ¿Qué haría en las primeras 24 horas desde la perspectiva de PCI?',
+  ['<b>Triage y aislamiento inmediato:</b> área designada, mínimo de personal, registro de todo el que entra.','<b>EPP:</b> guantes dobles, bata impermeable u overol, delantal, protección facial completa, respirador para procedimientos generadores de aerosoles, botas; colocación y retiro con observador entrenado.','<b>Notificación:</b> autoridad sanitaria y Centro Nacional de Enlace del RSI; el evento entra en la evaluación del Anexo 2.','<b>Laboratorio:</b> toma de muestra con bioseguridad, embalaje triple, envío a laboratorio de referencia.','<b>Ambiente y residuos:</b> cloro 0.5 % para derrames, residuos tratados como infecciosos, equipo dedicado.','<b>Contactos:</b> listado de personal, pacientes y familiares expuestos; seguimiento 21 días.','<b>Plan de traslado</b> a centro de tratamiento designado si existe; comunicación de riesgos al personal para evitar pánico y estigma.']],
+ ['Brote de cólera después de un desastre','Tras inundaciones, una región reporta 300 casos sospechosos de cólera en una semana. Se abrirá un Centro de Tratamiento de Cólera (CTC). Usted asesora en PCI y WASH. Proponga los elementos clave.',
+  ['<b>Diseño del CTC:</b> zonas diferenciadas (tamizaje, observación, hospitalización, convalecencia, área neutral), flujo unidireccional, un solo acompañante por paciente.','<b>WASH:</b> agua segura suficiente, letrinas separadas, puntos de lavado de manos con jabón o cloro 0.05 % en cada transición de zona.','<b>Desinfección:</b> cloro 0.2 % para superficies y 2 % para excretas y cadáveres (según guía GTFCC), manejo seguro de vómito y heces.','<b>Personal:</b> capacitación rápida, EPP según tarea (guantes, delantal, botas), salud ocupacional.','<b>Comunidad:</b> manejo seguro de cadáveres y entierros, comunicación de riesgo, vacunación oral, puntos de rehidratación oral.','<b>Vigilancia:</b> definición de caso, letalidad institucional (meta &lt;1 %), monitoreo de calidad del agua, informe diario al IMS.']],
+ ['Diagnóstico de país y plan nacional de PCI','Un ministerio de salud solicita cooperación técnica a la OPS: la evaluación IPCAT2 muestra que no hay programa nacional formal, y los hospitales de referencia promedian 320 puntos en IPCAF. Como consultor, ¿cómo organizaría la cooperación en 6 meses?',
+  ['<b>Interpretación:</b> sin requisitos mínimos nacionales; hospitales en nivel básico.','<b>Gobernanza:</b> apoyar la creación del programa nacional, punto focal, comité multisectorial, vínculo con el plan nacional de RAM y la autoridad RSI.','<b>Priorización:</b> empezar por requisitos mínimos OMS 2019, luego hoja de ruta hacia componentes básicos; seleccionar hospitales piloto.','<b>Productos:</b> plan de acción nacional con presupuesto, adaptación de guías, currículo de formación, protocolo de vigilancia de IAAS, plan de mejora por hospital.','<b>Implementación:</b> estrategias multimodales (empezando por higiene de manos), formación de formadores, auditoría y retroalimentación.','<b>Monitoreo:</b> línea de base y repetición de IPCAF/HHSAF, indicadores del marco de monitoreo OMS 2024–2030, reporte a la OPS.','<b>Preparación:</b> integrar PCI al plan de preparación de emergencias (HEPR, "safe and scalable care").']],
+ ['Preparación hospitalaria ante sarampión','El país reporta transmisión de sarampión en tres provincias. Un hospital pediátrico de referencia pide orientación para prepararse. ¿Qué recomienda?',
+  ['<b>Personal:</b> verificar inmunidad (2 dosis o serología), vacunar a quien no la tenga, excluir de la atención directa a no inmunes.','<b>Triage:</b> preguntar por fiebre y exantema en la entrada, mascarilla al paciente, aislamiento aéreo inmediato, evitar salas de espera comunes.','<b>Infraestructura:</b> identificar habitaciones con presión negativa o ventilación natural de 160 L/s, señalización.','<b>EPP:</b> respirador N95 para todo el personal en contacto, aun inmune, según política local.','<b>Exposiciones:</b> identificar contactos expuestos, vacuna en 72 h o inmunoglobulina en 6 días según elegibilidad, seguimiento hasta 21 días.','<b>Notificación y laboratorio:</b> notificación inmediata, toma de muestra para IgM y PCR.','<b>Comunicación:</b> mensajes a familias y equipo, coordinación con vigilancia y vacunación.']],
+ ['Bacteriemias por <i>Serratia marcescens</i> en una UCI neonatal','En una UCIN de 20 cupos de un hospital de referencia hubo 5 bacteriemias por <i>S. marcescens</i> en 10 días (en el año previo, 1 por trimestre). Dos neonatos murieron. Hay alimentación parenteral preparada en la unidad y leche humana extraída en el lactario. Como consultor, ¿cómo guía la investigación y el control? Siga los pasos del curso ECDC.',
+  ['<b>Confirmar:</b> comparar con la línea de base (supera lo esperado), verificar identificación y antibiograma, descartar seudobrote (contaminación de hemocultivos, cambio de método), pedir al laboratorio que <b>guarde todos los aislamientos</b>.','<b>Medidas inmediatas</b> (sin esperar la hipótesis): reforzar la higiene de manos con auditoría, cohorte de casos y personal dedicado, precauciones de contacto, revisar la preparación de medicamentos y de la nutrición parenteral, limpieza reforzada de incubadoras y equipos; considerar restringir ingresos según el riesgo. Notificar a la autoridad sanitaria.','<b>Escalar:</b> es un entorno de alto riesgo con letalidad y casos nuevos, así que corresponde una investigación completa con apoyo de salud pública si hace falta.','<b>Definición de caso</b> confirmado, probable y posible (persona, lugar y tiempo), búsqueda retrospectiva en los registros de microbiología y prospectiva con <b>tamizaje de colonización</b> de todos los neonatos. Lista de casos con cama, dispositivos (CVC, ventilación), nutrición parenteral, lotes de soluciones, leche, procedimientos y personal.','<b>Descriptiva:</b> curva epidémica, plano de cupos y línea de tiempo de estancia por paciente, para buscar exposiciones comunes.','<b>Observación en terreno</b>: preparación de medicamentos y nutrición parenteral, viales multidosis, manipulación de leche y extractores, cuidado del CVC, lavamanos cerca de las zonas de preparación (≥1 m), incubadoras, jabones y antisépticos (dispensadores rellenados).','<b>Hipótesis</b>, con <b>muestreo ambiental dirigido</b> (soluciones, jabón, lavamanos y sifones, leche, incubadoras) y tipificación por WGS para confirmar clonalidad. Estudio de casos y controles o de cohorte solo si aporta y hay número suficiente.','<b>Comunicación:</b> a las familias con empatía y transparencia; a la dirección, con un informe diario; al personal, sin culpabilizar. Si hay un producto implicado, alerta a la autoridad reguladora y retiro del lote.','<b>Cierre:</b> criterio basado en el periodo sin casos nuevos con tamizaje negativo, lecciones aprendidas y actualización de protocolos. Referencias: curso ECDC de brotes de IAAS y suplemento UCIN de la ICAR del CDC.']],
+ ['Conglomerado de hepatitis C en un centro ambulatorio de endoscopia','La autoridad sanitaria detecta 3 casos nuevos de hepatitis C, sin factores de riesgo, que se hicieron endoscopias con sedación el mismo día en un centro privado. Usted acompaña la evaluación de PCI. ¿Qué evalúa y qué recomienda?',
+  ['<b>Hipótesis principales:</b> prácticas de inyección inseguras en la sedación (reutilizar jeringas o agujas para entrar a viales multidosis o de propofol compartidos) y fallas en el reprocesamiento de endoscopios.','<b>Evaluación estructurada</b> con los módulos de la ICAR: 6 (seguridad de las inyecciones), 5 (desinfección de alto nivel y esterilización), 2 (higiene de manos) y 4 (limpieza), con entrevista y <b>observación directa</b> de un día de procedimientos.','<b>Inyecciones:</b> una aguja y una jeringa por uso; viales monodosis para un solo paciente; viales multidosis fechados, desechados a los 28 días y dedicados a un paciente si entran al área de atención; preparación en un área limpia lejos del lavamanos.','<b>Endoscopios:</b> limpieza previa, prueba de fugas en cada ciclo, concentración mínima efectiva del desinfectante verificada a diario, registros que permitan vincular cada endoscopio con cada paciente, almacenamiento seco y mantenimiento.','<b>Epidemiología:</b> lista de pacientes atendidos el mismo día y en los días previos, orden de atención (¿el caso fuente fue antes?), pruebas de VHC y genotipificación o secuenciación para demostrar el vínculo.','<b>Notificación a pacientes</b> <span class="en">look-back</span>: decisión con salud pública según el riesgo, con oferta de tamizaje para VHC, VHB y VIH y comunicación clara.','<b>Medidas inmediatas</b> sobre las fallas encontradas, formación con evaluación de competencias, auditoría y retroalimentación, y seguimiento de la implementación (paso 4 de la ICAR).']],
+ ['Declaración pública sobre un brote de EPC','Un periódico local publica que en un hospital "hay una superbacteria que mata pacientes". Hay 6 colonizados y 2 infectados por EPC tipo KPC en dos servicios, y un paciente infectado murió por su enfermedad de base. La dirección le pide preparar la declaración y los mensajes clave. Redacte el esquema.',
+  ['<b>Antes de salir:</b> informar a la dirección y a la autoridad sanitaria, coordinarse con comunicaciones, nombrar un vocero con apoyo técnico (no ir solo) y preparar las respuestas a las preguntas probables.','<b>1. Empatía:</b> "Entendemos la preocupación de pacientes y familias; también nos preocupa".','<b>2. La amenaza explicada:</b> qué es una EPC, la diferencia entre colonización e infección, quién está en riesgo (pacientes graves con dispositivos o antibióticos) y quién no (visitantes sanos), sin minimizar ni exagerar.','<b>3. Lo que se sabe y lo que no:</b> número de casos, servicios y fechas, y lo que aún se investiga (origen, tipificación).','<b>4. Cómo se sabrá más y cuándo:</b> tamizaje de contactos y resultados esperados en una fecha concreta.','<b>5 y 6. Lo que se hace y por qué:</b> precauciones de contacto, cohortes, limpieza reforzada, tamizaje, restricción de carbapenémicos con el PROA y apoyo de la autoridad sanitaria; anticipar que las medidas pueden cambiar.','<b>7. Compromiso y próxima actualización:</b> fecha y canal (página web, línea telefónica). Indicar qué pueden hacer las visitas: higiene de manos y respetar las indicaciones.','<b>8. Actitud científica:</b> refutar "mata pacientes" <b>sin repetirlo</b>, sin especular y sin culpar. Mensajes internos para el personal: el porqué de las medidas y cómo responder a las familias. Use la experiencia como impulso para la agenda de PCI y RAM.']],
+ ['Diseño de un sistema nacional de vigilancia de IAAS','Un país de la Región no tiene vigilancia nacional de IAAS. Hay 12 hospitales terciarios con laboratorio de microbiología, pero historia clínica electrónica solo en 3. El ministerio quiere cumplir la meta de 2026 del marco de monitoreo de la OMS. Proponga el diseño.',
+  ['<b>Gobernanza:</b> el punto focal nacional de PCI convoca a un grupo técnico multidisciplinario (PCI, epidemiología, laboratorio de referencia, RAM, sistemas de información y prestadores) que elabora un <b>plan estratégico nacional de vigilancia de IAAS y RAM</b> con objetivos SMART, vinculado al plan de RAM, a GLASS y a la autoridad del RSI.','<b>Priorización:</b> empezar por los 12 terciarios, con vigilancia <b>activa, prospectiva y focalizada</b>: dispositivos en UCI (ITS-CVC, NAV, ITU-SV), ISQ en un procedimiento trazador (por ejemplo, cesárea) e IAAS neonatales, además de alerta temprana de patógenos epidémicos y multirresistentes. Una prevalencia puntual nacional como línea de base.','<b>Definiciones:</b> adoptar definiciones nacionales estandarizadas. Las simplificadas de la OMS 2024 sirven donde el diagnóstico es limitado, y las del CDC o el ECDC donde haya capacidad, priorizando la exactitud.','<b>Datos:</b> denominadores (días-paciente, días-dispositivo, procedimientos), formulario y herramienta digital común, control de calidad, validación periódica y concordancia entre evaluadores. Automatización escalonada en los 3 hospitales con historia electrónica.','<b>Talento humano:</b> formación de los equipos de PCI (curso OpenWHO), dotación mínima y protección del tiempo dedicado.','<b>Análisis y retroalimentación:</b> tasas por 1000 días-dispositivo, informes trimestrales a los hospitales y a la dirección, comparación nacional, y uso para la mejora y <b>no para sancionar</b> (dirección 5).','<b>Emergencias:</b> integrar alertas de IAAS en la alerta temprana (fecha de ingreso y de inicio de síntomas, criterios de conglomerado).','<b>Monitoreo:</b> indicadores del marco OMS (plan elaborado en 2026, sistema establecido en 2028, porcentaje de hospitales participantes), evaluación del sistema (oportunidad, completitud, sensibilidad) y escalamiento a hospitales secundarios hacia las metas de 2028 y 2030.']]
+];
+document.getElementById('caseList').innerHTML=C.map((c,i)=>`<div class="card case"><span class="tag">Caso ${i+1}</span><h3>${c[0]}</h3><div class="prompt">${c[1]}</div><details><summary>Guía de respuesta</summary><ul>${c[2].map(x=>`<li>${x}</li>`).join('')}</ul></details></div>`).join('');
+
+let tId=null,left=1200;const tEl=document.getElementById('timer'),tBtn=document.getElementById('timerBtn');
+const fmt=s=>String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');
+tBtn.addEventListener('click',()=>{if(tId){clearInterval(tId);tId=null;left=1200;tEl.textContent=fmt(left);tBtn.textContent='Iniciar 20:00';return}
+  tBtn.textContent='Detener y reiniciar';tId=setInterval(()=>{left--;tEl.textContent=fmt(left);if(left<=0){clearInterval(tId);tId=null;tEl.textContent='Tiempo';tBtn.textContent='Iniciar 20:00';left=1200}},1000)});
+})();
+</script>
+
+</body></html>
